@@ -188,9 +188,6 @@ public class MouseClicker {
   
   private static Random random = new Random();  
   public static void Click() {
-    mouse_event(MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE, 0, 0, 0, 0);
-    Thread.Sleep(random.Next(5, 10));
-    
     mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
     Thread.Sleep(random.Next(20, 35));
     

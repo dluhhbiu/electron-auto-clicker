@@ -66,9 +66,6 @@ public class MouseClicker {
   private static Random random = new Random();
   
   public static void Click() {
-    mouse_event(MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE, 0, 0, 0, 0);
-    Thread.Sleep(random.Next(5, 10));
-    
     mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
     Thread.Sleep(random.Next(20, 35));
     
@@ -124,6 +121,7 @@ public class MouseClicker {
   mainWindow.webContents.send('log', 'Starting PowerShell process...');
   
   const ps = spawn('powershell.exe', ['-ExecutionPolicy', 'Bypass', '-File', scriptPath], { windowsHide: true });
+  currentProcess = ps;
   
   mainWindow.webContents.send('log', 'PowerShell process started with PID: ' + ps.pid);
   
@@ -137,6 +135,9 @@ public class MouseClicker {
   
   ps.on('close', (code) => {
     mainWindow.webContents.send('log', 'PowerShell process closed with code: ' + code);
+    if (currentProcess === ps) {
+      currentProcess = null;
+    }
     try {
       fs.unlinkSync(scriptPath);
       mainWindow.webContents.send('log', 'Temp script deleted');
@@ -153,6 +154,9 @@ public class MouseClicker {
   
   ps.on('error', (err) => {
     mainWindow.webContents.send('log', 'PowerShell process error: ' + err);
+    if (currentProcess === ps) {
+      currentProcess = null;
+    }
     event.reply('clicker-error', err.message);
   });
 });

@@ -36,7 +36,7 @@ app.on('activate', () => {
 
 ipcMain.on('start-clicker', (event) => {
   mainWindow.webContents.send('log', 'IPC start-clicker received');
-  
+
   const powerShellScript = `
 try {
   Write-Output "Starting clicker for 10 seconds..."
@@ -67,15 +67,15 @@ public class MouseClicker {
   
   public static void Click() {
     mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
-    Thread.Sleep(random.Next(20, 35));
+    Thread.Sleep(30);
     
     mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
-    Thread.Sleep(random.Next(5, 10));
+    Thread.Sleep(10);
   }
   
   public static void ClickWithDelay() {
     Click();
-    Thread.Sleep(random.Next(45, 65));
+    Thread.Sleep(55);
   }
 }
 '@
@@ -111,7 +111,7 @@ public class MouseClicker {
 
   const { spawn } = require('child_process');
   const os = require('os');
-  
+
   mainWindow.webContents.send('log', 'Creating temp directory script...');
   const scriptPath = path.join(os.tmpdir(), 'clicker.ps1');
   mainWindow.webContents.send('log', 'Script path: ' + scriptPath);
@@ -119,20 +119,20 @@ public class MouseClicker {
   mainWindow.webContents.send('log', 'Script written successfully');
 
   mainWindow.webContents.send('log', 'Starting PowerShell process...');
-  
+
   const ps = spawn('powershell.exe', ['-ExecutionPolicy', 'Bypass', '-File', scriptPath], { windowsHide: true });
   currentProcess = ps;
-  
+
   mainWindow.webContents.send('log', 'PowerShell process started with PID: ' + ps.pid);
-  
+
   ps.stdout.on('data', (data) => {
     mainWindow.webContents.send('ps-output', data.toString());
   });
-  
+
   ps.stderr.on('data', (data) => {
     mainWindow.webContents.send('ps-error', data.toString());
   });
-  
+
   ps.on('close', (code) => {
     mainWindow.webContents.send('log', 'PowerShell process closed with code: ' + code);
     if (currentProcess === ps) {
@@ -151,7 +151,7 @@ public class MouseClicker {
       event.reply('clicker-error', `Exit code: ${code}`);
     }
   });
-  
+
   ps.on('error', (err) => {
     mainWindow.webContents.send('log', 'PowerShell process error: ' + err);
     if (currentProcess === ps) {
@@ -163,7 +163,7 @@ public class MouseClicker {
 
 ipcMain.on('start-clicker-infinite', (event) => {
   mainWindow.webContents.send('log', 'IPC start-clicker-infinite received');
-  
+
   const powerShellScript = `
 try {
  Write-Output "Starting infinite clicker (ESC to stop)..."
@@ -193,15 +193,15 @@ public class MouseClicker {
   private static Random random = new Random();  
   public static void Click() {
     mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
-    Thread.Sleep(random.Next(20, 35));
+    Thread.Sleep(30);
     
     mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
-    Thread.Sleep(random.Next(5, 10));
+    Thread.Sleep(10);
   }
   
   public static void ClickWithDelay() {
     Click();
-    Thread.Sleep(random.Next(45, 65));
+    Thread.Sleep(55);
   }
 }
 '@
@@ -228,7 +228,7 @@ public class MouseClicker {
 
   const { spawn } = require('child_process');
   const os = require('os');
-  
+
   mainWindow.webContents.send('log', 'Creating temp directory script...');
   const scriptPath = path.join(os.tmpdir(), 'clicker-infinite.ps1');
   mainWindow.webContents.send('log', 'Script path: ' + scriptPath);
@@ -236,20 +236,20 @@ public class MouseClicker {
   mainWindow.webContents.send('log', 'Script written successfully');
 
   mainWindow.webContents.send('log', 'Starting PowerShell process...');
-  
+
   const ps = spawn('powershell.exe', ['-ExecutionPolicy', 'Bypass', '-File', scriptPath], { windowsHide: true });
   currentProcess = ps;
-  
+
   mainWindow.webContents.send('log', 'PowerShell process started with PID: ' + ps.pid);
-  
+
   ps.stdout.on('data', (data) => {
     mainWindow.webContents.send('ps-output', data.toString());
   });
-  
+
   ps.stderr.on('data', (data) => {
     mainWindow.webContents.send('ps-error', data.toString());
   });
-  
+
   ps.on('close', (code) => {
     mainWindow.webContents.send('log', 'PowerShell process closed with code: ' + code);
     if (currentProcess === ps) {
@@ -264,7 +264,7 @@ public class MouseClicker {
     mainWindow.webContents.send('log', 'Sending reply...');
     event.reply('clicker-complete');
   });
-  
+
   ps.on('error', (err) => {
     mainWindow.webContents.send('log', 'PowerShell process error: ' + err);
     if (currentProcess === ps) {

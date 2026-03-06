@@ -38,8 +38,9 @@ ipcMain.on('start-clicker', (event) => {
   mainWindow.webContents.send('log', 'IPC start-clicker received');
   
   const powerShellScript = `
-Write-Output "Starting clicker..."
-Add-Type -TypeDefinition @'
+try {
+  Write-Output "Starting clicker for 10 seconds..."
+  Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -51,9 +52,6 @@ public class MouseClicker {
   [DllImport("user32.dll")]
   public static extern bool GetCursorPos(out POINT lpPoint);
 
-  [DllImport("user32.dll")]
-  private static extern int GetSystemMetrics(int nIndex);
-
   [StructLayout(LayoutKind.Sequential)]
   public struct POINT {
     public int X;
@@ -64,62 +62,53 @@ public class MouseClicker {
   public const uint MOUSEEVENTF_LEFTUP = 0x04;
   public const uint MOUSEEVENTF_MOVE = 0x0001;
   public const uint MOUSEEVENTF_ABSOLUTE = 0x8000;
-  private const int SM_CXSCREEN = 0;
-  private const int SM_CYSCREEN = 1;
   
   private static Random random = new Random();
   
   public static void Click() {
-    POINT cursorPos;
-    GetCursorPos(out cursorPos);
-    
-    int screenWidth = GetSystemMetrics(SM_CXSCREEN);
-    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-    
-    uint x = (uint)(cursorPos.X * 65535 / screenWidth);
-    uint y = (uint)(cursorPos.Y * 65535 / screenHeight);
-    
-    // Small random jitter to simulate human hand
-    int jitterX = random.Next(-2, 3);
-    int jitterY = random.Next(-2, 3);
-    uint jitteredX = (uint)((cursorPos.X + jitterX) * 65535 / screenWidth);
-    uint jitteredY = (uint)((cursorPos.Y + jitterY) * 65535 / screenHeight);
-    
-    mouse_event(MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE, jitteredX, jitteredY, 0, 0);
-    Thread.Sleep(random.Next(5, 15));
+    mouse_event(MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE, 0, 0, 0, 0);
+    Thread.Sleep(random.Next(5, 10));
     
     mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
-    Thread.Sleep(random.Next(20, 40));
+    Thread.Sleep(random.Next(20, 35));
     
     mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
-    Thread.Sleep(random.Next(5, 15));
+    Thread.Sleep(random.Next(5, 10));
   }
   
   public static void ClickWithDelay() {
     Click();
-    Thread.Sleep(random.Next(40, 70));
+    Thread.Sleep(random.Next(45, 65));
   }
 }
 '@
-
-Write-Output "Clicker class loaded"
-$startTime = Get-Date
-$count = 0
-try {
-  while ((Get-Date) -lt $startTime.AddSeconds(10)) {
+  Write-Output "Clicker class loaded successfully"
+  $startTime = Get-Date
+  $endTime = $startTime.AddSeconds(10)
+  Write-Output "Start time: $startTime"
+  Write-Output "End time: $endTime"
+  $count = 0
+  while ($true) {
+    $currentTime = Get-Date
+    if ($currentTime -ge $endTime) {
+      Write-Output "Time limit reached"
+      break
+    }
     try {
       [MouseClicker]::ClickWithDelay()
       $count++
       if ($count % 10 -eq 0) {
-        Write-Output "Clicked $count times"
+        Write-Output "Clicked $count times at $currentTime"
       }
     } catch {
       Write-Output "Click error: $_"
+      Write-Output "Stack: $($_.ScriptStackTrace)"
     }
   }
   Write-Output "Done. Total clicks: $count"
 } catch {
   Write-Output "Fatal error: $_"
+  Write-Output "Stack: $($_.ScriptStackTrace)"
 }
 `;
 
@@ -172,8 +161,9 @@ ipcMain.on('start-clicker-infinite', (event) => {
   mainWindow.webContents.send('log', 'IPC start-clicker-infinite received');
   
   const powerShellScript = `
-Write-Output "Starting infinite clicker..."
-Add-Type -TypeDefinition @'
+try {
+ Write-Output "Starting infinite clicker (ESC to stop)..."
+ Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -185,9 +175,6 @@ public class MouseClicker {
   [DllImport("user32.dll")]
   public static extern bool GetCursorPos(out POINT lpPoint);
 
-  [DllImport("user32.dll")]
-  private static extern int GetSystemMetrics(int nIndex);
-
   [StructLayout(LayoutKind.Sequential)]
   public struct POINT {
     public int X;
@@ -198,46 +185,28 @@ public class MouseClicker {
   public const uint MOUSEEVENTF_LEFTUP = 0x04;
   public const uint MOUSEEVENTF_MOVE = 0x0001;
   public const uint MOUSEEVENTF_ABSOLUTE = 0x8000;
-  private const int SM_CXSCREEN = 0;
-  private const int SM_CYSCREEN = 1;
   
-  private static Random random = new Random();
-  
+  private static Random random = new Random();  
   public static void Click() {
-    POINT cursorPos;
-    GetCursorPos(out cursorPos);
-    
-    int screenWidth = GetSystemMetrics(SM_CXSCREEN);
-    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-    
-    uint x = (uint)(cursorPos.X * 65535 / screenWidth);
-    uint y = (uint)(cursorPos.Y * 65535 / screenHeight);
-    
-    int jitterX = random.Next(-2, 3);
-    int jitterY = random.Next(-2, 3);
-    uint jitteredX = (uint)((cursorPos.X + jitterX) * 65535 / screenWidth);
-    uint jitteredY = (uint)((cursorPos.Y + jitterY) * 65535 / screenHeight);
-    
-    mouse_event(MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE, jitteredX, jitteredY, 0, 0);
-    Thread.Sleep(random.Next(5, 15));
+    mouse_event(MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE, 0, 0, 0, 0);
+    Thread.Sleep(random.Next(5, 10));
     
     mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
-    Thread.Sleep(random.Next(20, 40));
+    Thread.Sleep(random.Next(20, 35));
     
     mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
-    Thread.Sleep(random.Next(5, 15));
+    Thread.Sleep(random.Next(5, 10));
   }
   
   public static void ClickWithDelay() {
     Click();
-    Thread.Sleep(random.Next(40, 70));
+    Thread.Sleep(random.Next(45, 65));
   }
 }
 '@
 
-Write-Output "Clicker class loaded"
-$count = 0
-try {
+  Write-Output "Clicker class loaded successfully"
+  $count = 0
   while ($true) {
     try {
       [MouseClicker]::ClickWithDelay()
@@ -247,10 +216,12 @@ try {
       }
     } catch {
       Write-Output "Click error: $_"
+      Write-Output "Stack: $($_.ScriptStackTrace)"
     }
   }
 } catch {
   Write-Output "Fatal error: $_"
+  Write-Output "Stack: $($_.ScriptStackTrace)"
 }
 `;
 

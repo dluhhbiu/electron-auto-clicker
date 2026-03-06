@@ -1,0 +1,8 @@
+dist/
+node_modules/
+ClickerApp.exe
+*.log
+debug.log
+*.asar
+electron-builder.yml
+builder-debug.yml

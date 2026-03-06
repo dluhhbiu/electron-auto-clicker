@@ -19,6 +19,11 @@
       font-size: 24px;
       margin-bottom: 30px;
     }
+    .buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
     button {
       padding: 15px 30px;
       font-size: 18px;
@@ -40,38 +45,81 @@
       margin-top: 20px;
       font-size: 16px;
       color: #666;
+      text-align: center;
+    }
+    .escape-hint {
+      font-size: 14px;
+      color: #888;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
   <h1>Автокликер</h1>
-  <button id="startBtn">Начать кликать (10 сек)</button>
+  <div class="buttons">
+    <button id="startBtn">Начать кликать (10 сек)</button>
+    <button id="startInfiniteBtn">Кликать до ESC</button>
+  </div>
   <div id="status">Нажмите для старта</div>
+  <div class="escape-hint" id="escapeHint" style="display: none;">Нажмите ESC для остановки</div>
   
   <script>
     const { ipcRenderer } = require('electron');
     const startBtn = document.getElementById('startBtn');
+    const startInfiniteBtn = document.getElementById('startInfiniteBtn');
     const status = document.getElementById('status');
+    const escapeHint = document.getElementById('escapeHint');
 
     console.log('App started');
 
     startBtn.addEventListener('click', () => {
       startBtn.disabled = true;
+      startInfiniteBtn.disabled = true;
       status.textContent = 'Кликание в течение 10 секунд...';
+      escapeHint.style.display = 'none';
       
       console.log('Start button clicked');
       ipcRenderer.send('start-clicker');
     });
 
+    startInfiniteBtn.addEventListener('click', () => {
+      startBtn.disabled = true;
+      startInfiniteBtn.disabled = true;
+      status.textContent = 'Кликание... (нажмите ESC для остановки)';
+      escapeHint.style.display = 'block';
+      
+      console.log('Start infinite button clicked');
+      ipcRenderer.send('start-clicker-infinite');
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        console.log('ESC pressed, stopping clicker');
+        ipcRenderer.send('stop-clicker');
+      }
+    });
+
     ipcRenderer.on('clicker-complete', () => {
       startBtn.disabled = false;
+      startInfiniteBtn.disabled = false;
       status.textContent = 'Готово! Кликание завершено.';
+      escapeHint.style.display = 'none';
       console.log('Clicker complete');
+    });
+
+    ipcRenderer.on('clicker-stopped', () => {
+      startBtn.disabled = false;
+      startInfiniteBtn.disabled = false;
+      status.textContent = 'Кликание остановлено.';
+      escapeHint.style.display = 'none';
+      console.log('Clicker stopped');
     });
 
     ipcRenderer.on('clicker-error', (event, error) => {
       startBtn.disabled = false;
+      startInfiniteBtn.disabled = false;
       status.textContent = 'Ошибка: ' + error;
+      escapeHint.style.display = 'none';
       console.log('Clicker error:', error);
     });
 

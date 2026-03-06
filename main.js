@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 
 let mainWindow;
+let currentProcess = null;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -41,51 +42,32 @@ Write-Output "Starting clicker..."
 Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
+using System.Threading;
+
 public class MouseClicker {
-  [StructLayout(LayoutKind.Sequential)]
-  public struct INPUT {
-    public uint type;
-    public INPUTUNION u;
-  }
-  
-  [StructLayout(LayoutKind.Explicit)]
-  public struct INPUTUNION {
-    [FieldOffset(0)]
-    public MOUSEINPUT mi;
-  }
-  
-  [StructLayout(LayoutKind.Sequential)]
-  public struct MOUSEINPUT {
-    public int dx;
-    public int dy;
-    public uint mouseData;
-    public uint dwFlags;
-    public uint time;
-    public IntPtr dwExtraInfo;
-  }
-  
-  [DllImport("user32.dll", SetLastError = true)]
-  public static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
-  
+  [DllImport("user32.dll")]
+  public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint cButtons, uint dwExtraInfo);
+
   [DllImport("user32.dll")]
   public static extern bool GetCursorPos(out POINT lpPoint);
-  
+
+  [DllImport("user32.dll")]
+  private static extern int GetSystemMetrics(int nIndex);
+
   [StructLayout(LayoutKind.Sequential)]
   public struct POINT {
     public int X;
     public int Y;
   }
-  
-  [DllImport("user32.dll")]
-  private static extern int GetSystemMetrics(int nIndex);
-  
-  public const uint INPUT_MOUSE = 0;
-  public const uint MOUSEEVENTF_LEFTDOWN = 0x0002;
-  public const uint MOUSEEVENTF_LEFTUP = 0x0004;
+
+  public const uint MOUSEEVENTF_LEFTDOWN = 0x02;
+  public const uint MOUSEEVENTF_LEFTUP = 0x04;
   public const uint MOUSEEVENTF_MOVE = 0x0001;
   public const uint MOUSEEVENTF_ABSOLUTE = 0x8000;
-  public const int SM_CXSCREEN = 0;
-  public const int SM_CYSCREEN = 1;
+  private const int SM_CXSCREEN = 0;
+  private const int SM_CYSCREEN = 1;
+  
+  private static Random random = new Random();
   
   public static void Click() {
     POINT cursorPos;
@@ -94,21 +76,28 @@ public class MouseClicker {
     int screenWidth = GetSystemMetrics(SM_CXSCREEN);
     int screenHeight = GetSystemMetrics(SM_CYSCREEN);
     
-    INPUT[] inputs = new INPUT[2];
+    uint x = (uint)(cursorPos.X * 65535 / screenWidth);
+    uint y = (uint)(cursorPos.Y * 65535 / screenHeight);
     
-    inputs[0] = new INPUT();
-    inputs[0].type = INPUT_MOUSE;
-    inputs[0].u.mi.dx = (cursorPos.X * 65535) / screenWidth;
-    inputs[0].u.mi.dy = (cursorPos.Y * 65535) / screenHeight;
-    inputs[0].u.mi.dwFlags = MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_ABSOLUTE;
+    // Small random jitter to simulate human hand
+    int jitterX = random.Next(-2, 3);
+    int jitterY = random.Next(-2, 3);
+    uint jitteredX = (uint)((cursorPos.X + jitterX) * 65535 / screenWidth);
+    uint jitteredY = (uint)((cursorPos.Y + jitterY) * 65535 / screenHeight);
     
-    inputs[1] = new INPUT();
-    inputs[1].type = INPUT_MOUSE;
-    inputs[1].u.mi.dx = (cursorPos.X * 65535) / screenWidth;
-    inputs[1].u.mi.dy = (cursorPos.Y * 65535) / screenHeight;
-    inputs[1].u.mi.dwFlags = MOUSEEVENTF_LEFTUP | MOUSEEVENTF_ABSOLUTE;
+    mouse_event(MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE, jitteredX, jitteredY, 0, 0);
+    Thread.Sleep(random.Next(5, 15));
     
-    uint result = SendInput(2, inputs, Marshal.SizeOf(typeof(INPUT)));
+    mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
+    Thread.Sleep(random.Next(20, 40));
+    
+    mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+    Thread.Sleep(random.Next(5, 15));
+  }
+  
+  public static void ClickWithDelay() {
+    Click();
+    Thread.Sleep(random.Next(40, 70));
   }
 }
 '@
@@ -116,19 +105,22 @@ public class MouseClicker {
 Write-Output "Clicker class loaded"
 $startTime = Get-Date
 $count = 0
-while ((Get-Date) -lt $startTime.AddSeconds(10)) {
-  try {
-    [MouseClicker]::Click()
-    $count++
-    if ($count % 10 -eq 0) {
-      Write-Output "Clicked $count times"
+try {
+  while ((Get-Date) -lt $startTime.AddSeconds(10)) {
+    try {
+      [MouseClicker]::ClickWithDelay()
+      $count++
+      if ($count % 10 -eq 0) {
+        Write-Output "Clicked $count times"
+      }
+    } catch {
+      Write-Output "Click error: $_"
     }
-  } catch {
-    Write-Output "Error: $_"
   }
-  Start-Sleep -Milliseconds 10
+  Write-Output "Done. Total clicks: $count"
+} catch {
+  Write-Output "Fatal error: $_"
 }
-Write-Output "Done. Total clicks: $count"
 `;
 
   const { spawn } = require('child_process');
@@ -174,4 +166,151 @@ Write-Output "Done. Total clicks: $count"
     mainWindow.webContents.send('log', 'PowerShell process error: ' + err);
     event.reply('clicker-error', err.message);
   });
+});
+
+ipcMain.on('start-clicker-infinite', (event) => {
+  mainWindow.webContents.send('log', 'IPC start-clicker-infinite received');
+  
+  const powerShellScript = `
+Write-Output "Starting infinite clicker..."
+Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+using System.Threading;
+
+public class MouseClicker {
+  [DllImport("user32.dll")]
+  public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint cButtons, uint dwExtraInfo);
+
+  [DllImport("user32.dll")]
+  public static extern bool GetCursorPos(out POINT lpPoint);
+
+  [DllImport("user32.dll")]
+  private static extern int GetSystemMetrics(int nIndex);
+
+  [StructLayout(LayoutKind.Sequential)]
+  public struct POINT {
+    public int X;
+    public int Y;
+  }
+
+  public const uint MOUSEEVENTF_LEFTDOWN = 0x02;
+  public const uint MOUSEEVENTF_LEFTUP = 0x04;
+  public const uint MOUSEEVENTF_MOVE = 0x0001;
+  public const uint MOUSEEVENTF_ABSOLUTE = 0x8000;
+  private const int SM_CXSCREEN = 0;
+  private const int SM_CYSCREEN = 1;
+  
+  private static Random random = new Random();
+  
+  public static void Click() {
+    POINT cursorPos;
+    GetCursorPos(out cursorPos);
+    
+    int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+    
+    uint x = (uint)(cursorPos.X * 65535 / screenWidth);
+    uint y = (uint)(cursorPos.Y * 65535 / screenHeight);
+    
+    int jitterX = random.Next(-2, 3);
+    int jitterY = random.Next(-2, 3);
+    uint jitteredX = (uint)((cursorPos.X + jitterX) * 65535 / screenWidth);
+    uint jitteredY = (uint)((cursorPos.Y + jitterY) * 65535 / screenHeight);
+    
+    mouse_event(MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE, jitteredX, jitteredY, 0, 0);
+    Thread.Sleep(random.Next(5, 15));
+    
+    mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
+    Thread.Sleep(random.Next(20, 40));
+    
+    mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+    Thread.Sleep(random.Next(5, 15));
+  }
+  
+  public static void ClickWithDelay() {
+    Click();
+    Thread.Sleep(random.Next(40, 70));
+  }
+}
+'@
+
+Write-Output "Clicker class loaded"
+$count = 0
+try {
+  while ($true) {
+    try {
+      [MouseClicker]::ClickWithDelay()
+      $count++
+      if ($count % 10 -eq 0) {
+        Write-Output "Clicked $count times"
+      }
+    } catch {
+      Write-Output "Click error: $_"
+    }
+  }
+} catch {
+  Write-Output "Fatal error: $_"
+}
+`;
+
+  const { spawn } = require('child_process');
+  const os = require('os');
+  
+  mainWindow.webContents.send('log', 'Creating temp directory script...');
+  const scriptPath = path.join(os.tmpdir(), 'clicker-infinite.ps1');
+  mainWindow.webContents.send('log', 'Script path: ' + scriptPath);
+  fs.writeFileSync(scriptPath, powerShellScript);
+  mainWindow.webContents.send('log', 'Script written successfully');
+
+  mainWindow.webContents.send('log', 'Starting PowerShell process...');
+  
+  const ps = spawn('powershell.exe', ['-ExecutionPolicy', 'Bypass', '-File', scriptPath], { windowsHide: true });
+  currentProcess = ps;
+  
+  mainWindow.webContents.send('log', 'PowerShell process started with PID: ' + ps.pid);
+  
+  ps.stdout.on('data', (data) => {
+    mainWindow.webContents.send('ps-output', data.toString());
+  });
+  
+  ps.stderr.on('data', (data) => {
+    mainWindow.webContents.send('ps-error', data.toString());
+  });
+  
+  ps.on('close', (code) => {
+    mainWindow.webContents.send('log', 'PowerShell process closed with code: ' + code);
+    if (currentProcess === ps) {
+      currentProcess = null;
+    }
+    try {
+      fs.unlinkSync(scriptPath);
+      mainWindow.webContents.send('log', 'Temp script deleted');
+    } catch (e) {
+      mainWindow.webContents.send('log', 'Error deleting temp script: ' + e.message);
+    }
+    mainWindow.webContents.send('log', 'Sending reply...');
+    event.reply('clicker-complete');
+  });
+  
+  ps.on('error', (err) => {
+    mainWindow.webContents.send('log', 'PowerShell process error: ' + err);
+    if (currentProcess === ps) {
+      currentProcess = null;
+    }
+    event.reply('clicker-error', err.message);
+  });
+});
+
+ipcMain.on('stop-clicker', () => {
+  mainWindow.webContents.send('log', 'Stop clicker requested');
+  if (currentProcess) {
+    mainWindow.webContents.send('log', 'Killing PowerShell process PID: ' + currentProcess.pid);
+    currentProcess.kill('SIGTERM');
+    currentProcess = null;
+    mainWindow.webContents.send('clicker-stopped');
+  } else {
+    mainWindow.webContents.send('log', 'No active process to stop');
+    mainWindow.webContents.send('clicker-stopped');
+  }
 });

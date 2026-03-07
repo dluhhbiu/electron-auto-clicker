@@ -2,10 +2,17 @@
 
 ## Project Overview
 
-This is an Electron-based auto-clicker application that uses PowerShell scripts via SendInput API for mouse clicks. The app has two processes:
+This is an Electron-based auto-clicker application that uses PowerShell scripts via SendInput API for mouse clicks and keyboard input. The app has two processes:
 
 - **Main Process**: Node.js backend (`main.js`) that spawns PowerShell scripts
 - **Renderer Process**: UI (`index.html`) that communicates with main via IPC
+
+### Features
+
+- **Mouse-only mode**: Left mouse clicks at ~70ms intervals
+- **Hybrid mode**: One mouse click + 4 arrow key presses (↑ ↓ ← →) per cycle
+  - All arrow keys are pressed simultaneously to maximize input rate
+  - Useful for games with click-rate limits that accept keyboard input
 
 ## Validation Before Task Completion
 
@@ -23,6 +30,7 @@ npm run format -- --check
 ```
 
 **Rules:**
+
 - Never mark task as complete if lint errors exist
 - Never mark task as complete if syntax errors exist
 - If either fails, fix the issues BEFORE reporting completion
@@ -56,6 +64,7 @@ npx electron-builder --win --dir  # Build without packaging (Linux/WSL)
 ✅ **ESLint + Prettier configured**
 
 Run before committing:
+
 ```bash
 npm run lint          # Check for errors
 npm run lint:fix      # Auto-fix errors
@@ -63,12 +72,13 @@ npm run format        # Format all files
 ```
 
 Rules:
+
 - Use CommonJS (require/module.exports)
 - Double quotes for strings
 - 2 spaces for indentation
 - No nodeIntegration warnings disable
 - Allow console.log for debugging IPC communication
-- Handle unused variables (prefix with _ if intentional)
+- Handle unused variables (prefix with \_ if intentional)
 
 ## Code Style Guidelines
 
@@ -122,6 +132,31 @@ ipcRenderer.send("action", data);
 - Renderer → Main: `ipcRenderer.send('channel-name', data)`
 - Main → Renderer (reply): `event.reply('channel-name', data)`
 - Use consistent prefixing for related channels (e.g., `clicker-*`, `log-*`)
+
+#### Available IPC Channels
+
+**Mouse-only clicker:**
+
+- `start-clicker` - Start clicker for 10 seconds
+- `start-clicker-infinite` - Start clicker until ESC pressed
+- `stop-clicker` - Stop active clicker process
+
+**Hybrid clicker (mouse + keyboard):**
+
+- `start-hybrid-clicker` - Start hybrid clicker for 10 seconds
+- `start-hybrid-clicker-infinite` - Start hybrid clicker until ESC pressed
+
+**Logging:**
+
+- `log` - Main process logs to renderer
+- `ps-output` - PowerShell stdout
+- `ps-error` - PowerShell stderr
+
+**Response channels:**
+
+- `clicker-complete` - Clicker finished successfully
+- `clicker-error` - Clicker error occurred
+- `clicker-stopped` - Clicker was stopped
 
 ### File Operations
 
@@ -189,6 +224,48 @@ try {
 - Use `Add-Type -TypeDefinition @'...'@` heredoc syntax for multi-line code
 - Include `Write-Output` statements for logging (captured via stdout)
 - Handle exceptions in PowerShell: `try { ... } catch { Write-Output "Error: $_" }`
+
+#### Keyboard Input via keybd_event
+
+```csharp
+[DllImport("user32.dll")]
+public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, uint dwExtraInfo);
+
+public const uint KEYEVENTF_KEYUP = 0x0002;
+public const byte VK_UP = 0x26;
+public const byte VK_DOWN = 0x28;
+public const byte VK_LEFT = 0x25;
+public const byte VK_RIGHT = 0x27;
+
+// Press key
+keybd_event(VK_UP, 0, 0, 0);
+Thread.Sleep(30);
+
+// Release key
+keybd_event(VK_UP, 0, KEYEVENTF_KEYUP, 0);
+```
+
+#### Hybrid Clicker Example
+
+```csharp
+public static void HybridClick() {
+  Click();
+
+  // Press all 4 arrow keys simultaneously
+  keybd_event(VK_UP, 0, 0, 0);
+  keybd_event(VK_DOWN, 0, 0, 0);
+  keybd_event(VK_LEFT, 0, 0, 0);
+  keybd_event(VK_RIGHT, 0, 0, 0);
+  Thread.Sleep(30);
+
+  // Release all 4 arrow keys
+  keybd_event(VK_UP, 0, KEYEVENTF_KEYUP, 0);
+  keybd_event(VK_DOWN, 0, KEYEVENTF_KEYUP, 0);
+  keybd_event(VK_LEFT, 0, KEYEVENTF_KEYUP, 0);
+  keybd_event(VK_RIGHT, 0, KEYEVENTF_KEYUP, 0);
+  Thread.Sleep(10);
+}
+```
 
 ```javascript
 const ps1Code = `

@@ -316,13 +316,24 @@ public class HybridClicker {
   public const uint MOUSEEVENTF_LEFTUP = 0x04;
   public const uint MOUSEEVENTF_MOVE = 0x0001;
   public const uint MOUSEEVENTF_ABSOLUTE = 0x8000;
-  
+
   public const uint KEYEVENTF_KEYUP = 0x0002;
-  
+
   public const byte VK_UP = 0x26;
   public const byte VK_DOWN = 0x28;
   public const byte VK_LEFT = 0x25;
   public const byte VK_RIGHT = 0x27;
+
+  public const byte VK_NUMPAD0 = 0x60;
+  public const byte VK_NUMPAD1 = 0x61;
+  public const byte VK_NUMPAD2 = 0x62;
+  public const byte VK_NUMPAD3 = 0x63;
+  public const byte VK_NUMPAD4 = 0x64;
+  public const byte VK_NUMPAD5 = 0x65;
+  public const byte VK_NUMPAD6 = 0x66;
+  public const byte VK_NUMPAD7 = 0x67;
+  public const byte VK_NUMPAD8 = 0x68;
+  public const byte VK_NUMPAD9 = 0x69;
 
   public static void Click() {
     mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
@@ -330,25 +341,45 @@ public class HybridClicker {
     mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
     Thread.Sleep(10);
   }
-  
+
   public static void KeyEvent(byte vk) {
     keybd_event(vk, 0, 0, 0);
     Thread.Sleep(30);
     keybd_event(vk, 0, KEYEVENTF_KEYUP, 0);
     Thread.Sleep(10);
   }
-  
+
   public static void HybridClick() {
     Click();
     keybd_event(VK_UP, 0, 0, 0);
     keybd_event(VK_DOWN, 0, 0, 0);
     keybd_event(VK_LEFT, 0, 0, 0);
     keybd_event(VK_RIGHT, 0, 0, 0);
+    keybd_event(VK_NUMPAD0, 0, 0, 0);
+    keybd_event(VK_NUMPAD1, 0, 0, 0);
+    keybd_event(VK_NUMPAD2, 0, 0, 0);
+    keybd_event(VK_NUMPAD3, 0, 0, 0);
+    keybd_event(VK_NUMPAD4, 0, 0, 0);
+    keybd_event(VK_NUMPAD5, 0, 0, 0);
+    keybd_event(VK_NUMPAD6, 0, 0, 0);
+    keybd_event(VK_NUMPAD7, 0, 0, 0);
+    keybd_event(VK_NUMPAD8, 0, 0, 0);
+    keybd_event(VK_NUMPAD9, 0, 0, 0);
     Thread.Sleep(30);
     keybd_event(VK_UP, 0, KEYEVENTF_KEYUP, 0);
     keybd_event(VK_DOWN, 0, KEYEVENTF_KEYUP, 0);
     keybd_event(VK_LEFT, 0, KEYEVENTF_KEYUP, 0);
     keybd_event(VK_RIGHT, 0, KEYEVENTF_KEYUP, 0);
+    keybd_event(VK_NUMPAD0, 0, KEYEVENTF_KEYUP, 0);
+    keybd_event(VK_NUMPAD1, 0, KEYEVENTF_KEYUP, 0);
+    keybd_event(VK_NUMPAD2, 0, KEYEVENTF_KEYUP, 0);
+    keybd_event(VK_NUMPAD3, 0, KEYEVENTF_KEYUP, 0);
+    keybd_event(VK_NUMPAD4, 0, KEYEVENTF_KEYUP, 0);
+    keybd_event(VK_NUMPAD5, 0, KEYEVENTF_KEYUP, 0);
+    keybd_event(VK_NUMPAD6, 0, KEYEVENTF_KEYUP, 0);
+    keybd_event(VK_NUMPAD7, 0, KEYEVENTF_KEYUP, 0);
+    keybd_event(VK_NUMPAD8, 0, KEYEVENTF_KEYUP, 0);
+    keybd_event(VK_NUMPAD9, 0, KEYEVENTF_KEYUP, 0);
     Thread.Sleep(10);
   }
   
@@ -374,9 +405,9 @@ public class HybridClicker {
     }
     try {
       [HybridClicker]::HybridClickWithDelay()
-      $count += 5
+      $count += 15
       $clickCount++
-      $keyCount += 4
+      $keyCount += 14
       if ($count % 10 -eq 0) {
         Write-Output "Mouse clicks: $clickCount, Key presses: $keyCount at $currentTime"
       }
@@ -474,13 +505,24 @@ public class HybridClicker {
   public const uint MOUSEEVENTF_LEFTUP = 0x04;
   public const uint MOUSEEVENTF_MOVE = 0x0001;
   public const uint MOUSEEVENTF_ABSOLUTE = 0x8000;
-  
+
   public const uint KEYEVENTF_KEYUP = 0x0002;
-  
+
   public const byte VK_UP = 0x26;
   public const byte VK_DOWN = 0x28;
   public const byte VK_LEFT = 0x25;
   public const byte VK_RIGHT = 0x27;
+
+  public const byte VK_NUMPAD0 = 0x60;
+  public const byte VK_NUMPAD1 = 0x61;
+  public const byte VK_NUMPAD2 = 0x62;
+  public const byte VK_NUMPAD3 = 0x63;
+  public const byte VK_NUMPAD4 = 0x64;
+  public const byte VK_NUMPAD5 = 0x65;
+  public const byte VK_NUMPAD6 = 0x66;
+  public const byte VK_NUMPAD7 = 0x67;
+  public const byte VK_NUMPAD8 = 0x68;
+  public const byte VK_NUMPAD9 = 0x69;
 
   public static void Click() {
     mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
@@ -488,25 +530,45 @@ public class HybridClicker {
     mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
     Thread.Sleep(10);
   }
-  
+
   public static void KeyEvent(byte vk) {
     keybd_event(vk, 0, 0, 0);
     Thread.Sleep(30);
     keybd_event(vk, 0, KEYEVENTF_KEYUP, 0);
     Thread.Sleep(10);
   }
-  
+
   public static void HybridClick() {
     Click();
     keybd_event(VK_UP, 0, 0, 0);
     keybd_event(VK_DOWN, 0, 0, 0);
     keybd_event(VK_LEFT, 0, 0, 0);
     keybd_event(VK_RIGHT, 0, 0, 0);
+    keybd_event(VK_NUMPAD0, 0, 0, 0);
+    keybd_event(VK_NUMPAD1, 0, 0, 0);
+    keybd_event(VK_NUMPAD2, 0, 0, 0);
+    keybd_event(VK_NUMPAD3, 0, 0, 0);
+    keybd_event(VK_NUMPAD4, 0, 0, 0);
+    keybd_event(VK_NUMPAD5, 0, 0, 0);
+    keybd_event(VK_NUMPAD6, 0, 0, 0);
+    keybd_event(VK_NUMPAD7, 0, 0, 0);
+    keybd_event(VK_NUMPAD8, 0, 0, 0);
+    keybd_event(VK_NUMPAD9, 0, 0, 0);
     Thread.Sleep(30);
     keybd_event(VK_UP, 0, KEYEVENTF_KEYUP, 0);
     keybd_event(VK_DOWN, 0, KEYEVENTF_KEYUP, 0);
     keybd_event(VK_LEFT, 0, KEYEVENTF_KEYUP, 0);
     keybd_event(VK_RIGHT, 0, KEYEVENTF_KEYUP, 0);
+    keybd_event(VK_NUMPAD0, 0, KEYEVENTF_KEYUP, 0);
+    keybd_event(VK_NUMPAD1, 0, KEYEVENTF_KEYUP, 0);
+    keybd_event(VK_NUMPAD2, 0, KEYEVENTF_KEYUP, 0);
+    keybd_event(VK_NUMPAD3, 0, KEYEVENTF_KEYUP, 0);
+    keybd_event(VK_NUMPAD4, 0, KEYEVENTF_KEYUP, 0);
+    keybd_event(VK_NUMPAD5, 0, KEYEVENTF_KEYUP, 0);
+    keybd_event(VK_NUMPAD6, 0, KEYEVENTF_KEYUP, 0);
+    keybd_event(VK_NUMPAD7, 0, KEYEVENTF_KEYUP, 0);
+    keybd_event(VK_NUMPAD8, 0, KEYEVENTF_KEYUP, 0);
+    keybd_event(VK_NUMPAD9, 0, KEYEVENTF_KEYUP, 0);
     Thread.Sleep(10);
   }
   
@@ -524,9 +586,9 @@ public class HybridClicker {
   while ($true) {
     try {
       [HybridClicker]::HybridClickWithDelay()
-      $count += 5
+      $count += 15
       $clickCount++
-      $keyCount += 4
+      $keyCount += 14
       if ($count % 10 -eq 0) {
         Write-Output "Mouse clicks: $clickCount, Key presses: $keyCount"
       }

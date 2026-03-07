@@ -7,6 +7,31 @@ This is an Electron-based auto-clicker application that uses PowerShell scripts 
 - **Main Process**: Node.js backend (`main.js`) that spawns PowerShell scripts
 - **Renderer Process**: UI (`index.html`) that communicates with main via IPC
 
+## Validation Before Task Completion
+
+CRITICAL: Before declaring a task complete, ALWAYS run these validations:
+
+```bash
+# 1. Check JS syntax
+node --check main.js
+
+# 2. Run ESLint (must pass with no errors)
+npm run lint
+
+# 3. Format check (optional, but recommended)
+npm run format -- --check
+```
+
+**Rules:**
+- Never mark task as complete if lint errors exist
+- Never mark task as complete if syntax errors exist
+- If either fails, fix the issues BEFORE reporting completion
+- Only report success AFTER all validations pass
+
+**Exception:** If task doesn't involve code changes (e.g., readme updates, git operations), validation may be skipped.
+
+---
+
 ## Build & Development Commands
 
 ```bash

@@ -57,8 +57,12 @@
   <body>
     <h1>Автокликер</h1>
     <div class="buttons">
-      <button id="startBtn">Начать кликать (10 сек)</button>
-      <button id="startInfiniteBtn">Кликать до ESC</button>
+      <button id="startBtn">Клики (10 сек)</button>
+      <button id="startInfiniteBtn">Клики до ESC</button>
+    </div>
+    <div class="buttons">
+      <button id="startHybridBtn">Клик+Клавиши (10 сек)</button>
+      <button id="startHybridInfiniteBtn">Клик+Клавиши до ESC</button>
     </div>
     <div id="status">Нажмите для старта</div>
     <div class="escape-hint" id="escapeHint" style="display: none">Нажмите ESC для остановки</div>
@@ -67,6 +71,8 @@
       const { ipcRenderer } = require("electron");
       const startBtn = document.getElementById("startBtn");
       const startInfiniteBtn = document.getElementById("startInfiniteBtn");
+      const startHybridBtn = document.getElementById("startHybridBtn");
+      const startHybridInfiniteBtn = document.getElementById("startHybridInfiniteBtn");
       const status = document.getElementById("status");
       const escapeHint = document.getElementById("escapeHint");
 
@@ -75,6 +81,8 @@
       startBtn.addEventListener("click", () => {
         startBtn.disabled = true;
         startInfiniteBtn.disabled = true;
+        startHybridBtn.disabled = true;
+        startHybridInfiniteBtn.disabled = true;
         status.textContent = "Кликание в течение 10 секунд...";
         escapeHint.style.display = "none";
 
@@ -85,11 +93,37 @@
       startInfiniteBtn.addEventListener("click", () => {
         startBtn.disabled = true;
         startInfiniteBtn.disabled = true;
+        startHybridBtn.disabled = true;
+        startHybridInfiniteBtn.disabled = true;
         status.textContent = "Кликание... (нажмите ESC для остановки)";
         escapeHint.style.display = "block";
 
         console.log("Start infinite button clicked");
         ipcRenderer.send("start-clicker-infinite");
+      });
+
+      startHybridBtn.addEventListener("click", () => {
+        startBtn.disabled = true;
+        startInfiniteBtn.disabled = true;
+        startHybridBtn.disabled = true;
+        startHybridInfiniteBtn.disabled = true;
+        status.textContent = "Клики + клавиши в течение 10 секунд...";
+        escapeHint.style.display = "none";
+
+        console.log("Start hybrid button clicked");
+        ipcRenderer.send("start-hybrid-clicker");
+      });
+
+      startHybridInfiniteBtn.addEventListener("click", () => {
+        startBtn.disabled = true;
+        startInfiniteBtn.disabled = true;
+        startHybridBtn.disabled = true;
+        startHybridInfiniteBtn.disabled = true;
+        status.textContent = "Клики + клавиши... (нажмите ESC для остановки)";
+        escapeHint.style.display = "block";
+
+        console.log("Start hybrid infinite button clicked");
+        ipcRenderer.send("start-hybrid-clicker-infinite");
       });
 
       document.addEventListener("keydown", (e) => {
@@ -102,6 +136,8 @@
       ipcRenderer.on("clicker-complete", () => {
         startBtn.disabled = false;
         startInfiniteBtn.disabled = false;
+        startHybridBtn.disabled = false;
+        startHybridInfiniteBtn.disabled = false;
         status.textContent = "Готово! Кликание завершено.";
         escapeHint.style.display = "none";
         console.log("Clicker complete");
@@ -110,6 +146,8 @@
       ipcRenderer.on("clicker-stopped", () => {
         startBtn.disabled = false;
         startInfiniteBtn.disabled = false;
+        startHybridBtn.disabled = false;
+        startHybridInfiniteBtn.disabled = false;
         status.textContent = "Кликание остановлено.";
         escapeHint.style.display = "none";
         console.log("Clicker stopped");
@@ -118,6 +156,8 @@
       ipcRenderer.on("clicker-error", (event, error) => {
         startBtn.disabled = false;
         startInfiniteBtn.disabled = false;
+        startHybridBtn.disabled = false;
+        startHybridInfiniteBtn.disabled = false;
         status.textContent = "Ошибка: " + error;
         escapeHint.style.display = "none";
         console.log("Clicker error:", error);

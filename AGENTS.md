@@ -2,328 +2,175 @@
 
 ## Project Overview
 
-This is an Electron-based auto-clicker application that uses PowerShell scripts via SendInput API for mouse clicks and keyboard input. The app has two processes:
+Electron-based auto-clicker using PowerShell SendInput API. Two processes:
 
-- **Main Process**: Node.js backend (`main.js`) that spawns PowerShell scripts
-- **Renderer Process**: UI (`index.html`) that communicates with main via IPC
+- **Main Process** (`main.js`): Spawns PowerShell scripts, manages IPC
+- **Renderer Process** (`index.html`): UI, displays logs, sends commands
 
-### Features
+**Features**: Mouse-only mode (~70ms/click) and hybrid mode (click + 4 arrow keys simultaneously).
 
-- **Mouse-only mode**: Left mouse clicks at ~70ms intervals
-- **Hybrid mode**: One mouse click + 4 arrow key presses (↑ ↓ ← →) per cycle
-  - All arrow keys are pressed simultaneously to maximize input rate
-  - Useful for games with click-rate limits that accept keyboard input
+## Validation Rules (CRITICAL)
 
-## Validation Before Task Completion
-
-CRITICAL: Before declaring a task complete, ALWAYS run these validations:
+Before declaring task complete, ALWAYS run:
 
 ```bash
-# 1. Check JS syntax
-node --check main.js
-
-# 2. Run ESLint (must pass with no errors)
-npm run lint
-
-# 3. Format check (optional, but recommended)
-npm run format -- --check
+node --check main.js        # Check syntax
+npm run lint                # Must pass with no errors
+npm run format -- --check   # Optional format check
 ```
 
-**Rules:**
-
-- Never mark task as complete if lint errors exist
-- Never mark task as complete if syntax errors exist
-- If either fails, fix the issues BEFORE reporting completion
-- Only report success AFTER all validations pass
-
-**Exception:** If task doesn't involve code changes (e.g., readme updates, git operations), validation may be skipped.
+Never mark complete if lint/syntax errors exist. Fix first, then report success. Exception: Non-code tasks (docs, git ops).
 
 ---
 
-## Build & Development Commands
+## Commands
 
 ```bash
-# Development
-npm start              # Run Electron app in development mode
-
-# Build
-npm run build-win      # Build Windows executable (requires Windows/wine)
-npx electron-builder --win --dir  # Build without packaging (Linux/WSL)
+npm start                   # Run app in dev mode
+npm run build-win           # Build Windows .exe (requires Windows)
+npm run lint                # Check for errors
+npm run lint:fix            # Auto-fix errors
+npm run format              # Format all files
 ```
 
-### Testing
+**Testing**: Not configured. Add Jest + electron-mock for main process, Playwright for renderer.
 
-⚠️ **No tests configured** - The project currently has no test framework. When adding tests, prefer:
+---
 
-- Main process: Jest with `electron-mock` or similar
-- Renderer process: Playwright or Jest with jsdom
-- Integration: Custom test scripts that verify PowerShell execution
+## Code Style
 
-### Linting
-
-✅ **ESLint + Prettier configured**
-
-Run before committing:
-
-```bash
-npm run lint          # Check for errors
-npm run lint:fix      # Auto-fix errors
-npm run format        # Format all files
-```
-
-Rules:
-
-- Use CommonJS (require/module.exports)
-- Double quotes for strings
-- 2 spaces for indentation
-- No nodeIntegration warnings disable
-- Allow console.log for debugging IPC communication
-- Handle unused variables (prefix with \_ if intentional)
-
-## Code Style Guidelines
-
-### Module System
-
-- **CommonJS only** - Use `require()` and `module.exports`
-- No ES modules (`import/export`) - `"type": "commonjs"` in package.json
+**Module System**: CommonJS (require/module.exports), `"type": "commonjs"` in package.json
 
 ```javascript
 const { app, BrowserWindow } = require("electron");
 const path = require("path");
-
-module.exports = { something };
 ```
 
-### Process Architecture
+**Formatting** (ESLint + Prettier):
 
-#### Main Process (main.js)
+- Double quotes, 2-space indentation, trailing commas (es5)
+- No console warnings, unused vars prefix with `_`
+- Max line width: 100
 
-- Handles OS-level operations (child processes, file I/O, API calls)
-- Uses `BrowserWindow` for UI
-- Manages PowerShell script execution via `child_process.spawn`
-- Sends logs to renderer via `mainWindow.webContents.send()`
+**Naming**:
 
-```javascript
-ipcMain.on("channel", (event, data) => {
-  mainWindow.webContents.send("log", "message");
-  event.reply("response-channel", result);
-});
-```
+- Files: `kebab-case`, Classes: `PascalCase`
+- Variables: `camelCase`, Constants: `UPPER_SNAKE_CASE`
+- Functions: verb-first (`createWindow()`, `spawnPowerShell()`)
+- IPC channels: action verbs (`start-clicker`, not `clicker`)
 
-#### Renderer Process (index.html script)
+---
 
-- Handles UI interactions and displayslogs
-- Uses `ipcRenderer` for communication
-- Never execute child processes or file operations here
+## IPC Communication
 
-```javascript
-const { ipcRenderer } = require("electron");
+**Patterns**:
 
-ipcRenderer.on("log", (event, message) => {
-  console.log(message);
-});
+- Main→Renderer: `mainWindow.webContents.send('channel', data)`
+- Renderer→Main: `ipcRenderer.send('channel', data)`
+- Reply: `event.reply('channel', data)`
 
-ipcRenderer.send("action", data);
-```
+**Available channels**:
 
-### IPC Communication Patterns
+| Direction     | Channel                         | Purpose                    |
+| ------------- | ------------------------------- | -------------------------- |
+| Renderer→Main | `start-clicker`                 | Start mouse-only 10s       |
+| Renderer→Main | `start-clicker-infinite`        | Start mouse-only until ESC |
+| Renderer→Main | `start-hybrid-clicker`          | Start hybrid 10s           |
+| Renderer→Main | `start-hybrid-clicker-infinite` | Start hybrid until ESC     |
+| Renderer→Main | `stop-clicker`                  | Stop active process        |
+| Main→Renderer | `log`                           | Main process logs          |
+| Main→Renderer | `ps-output`                     | PowerShell stdout          |
+| Main→Renderer | `ps-error`                      | PowerShell stderr          |
+| Main→Renderer | `clicker-complete`              | Success notification       |
+| Main→Renderer | `clicker-error`                 | Error with message         |
+| Main→Renderer | `clicker-stopped`               | Stop notification          |
 
-- Main → Renderer: `mainWindow.webContents.send('channel-name', data)`
-- Renderer → Main: `ipcRenderer.send('channel-name', data)`
-- Main → Renderer (reply): `event.reply('channel-name', data)`
-- Use consistent prefixing for related channels (e.g., `clicker-*`, `log-*`)
+---
 
-#### Available IPC Channels
+## Process Architecture
 
-**Mouse-only clicker:**
+**Main Process** (`main.js`):
 
-- `start-clicker` - Start clicker for 10 seconds
-- `start-clicker-infinite` - Start clicker until ESC pressed
-- `stop-clicker` - Stop active clicker process
+- Handle OS ops via `child_process.spawn()`
+- Manage PowerShell scripts in temp directory
+- Send logs via `mainWindow.webContents.send()`
 
-**Hybrid clicker (mouse + keyboard):**
+**Renderer Process** (inline script in `index.html`):
 
-- `start-hybrid-clicker` - Start hybrid clicker for 10 seconds
-- `start-hybrid-clicker-infinite` - Start hybrid clicker until ESC pressed
+- Handle UI interactions via `ipcRenderer`
+- Display logs, never run child processes
 
-**Logging:**
+---
 
-- `log` - Main process logs to renderer
-- `ps-output` - PowerShell stdout
-- `ps-error` - PowerShell stderr
+## File & Process Management
 
-**Response channels:**
-
-- `clicker-complete` - Clicker finished successfully
-- `clicker-error` - Clicker error occurred
-- `clicker-stopped` - Clicker was stopped
-
-### File Operations
-
-- Use `os.tmpdir()` for temporary PowerShell scripts
-- Always clean up temp files in process cleanup handlers
-- Use `path.join()` for cross-platform path construction
+**Temporary files**: Use `os.tmpdir()`, clean up in `close` handler
 
 ```javascript
 const scriptPath = path.join(os.tmpdir(), "script.ps1");
-fs.writeFileSync(scriptPath, content);
-// ... later in cleanup
-try {
-  fs.unlinkSync(scriptPath);
-} catch (e) {}
-```
-
-### Child Process Execution
-
-- Prefer `spawn()` over `exec()` for better control (no shell escaping issues)
-- Set `windowsHide: true` to hide PowerShell windows on Windows
-- Handle all three events: `close`, `error`, and `data` (stdout/stderr)
-
-```javascript
-const ps = spawn("powershell.exe", ["-File", scriptPath], { windowsHide: true });
-ps.stdout.on("data", (data) => {
-  /* handle output */
-});
-ps.stderr.on("data", (data) => {
-  /* handle errors */
+fs.writeFileSync(scriptPath, code);
+const ps = spawn("powershell", ["-ExecutionPolicy", "Bypass", "-File", scriptPath], {
+  windowsHide: true,
 });
 ps.on("close", (code) => {
-  /* cleanup */
-});
-ps.on("error", (err) => {
-  /* handle spawn failure */
+  try {
+    fs.unlinkSync(scriptPath);
+  } catch (e) {}
 });
 ```
 
-### Error Handling
+**Child process**: Prefer `spawn()` over `exec()`, handle all events: `close`, `error`, `stdout`, `stderr`
 
-- Wrap risky operations in try-catch blocks in IPC handlers
-- Never let async errors crash the main process
-- Send errors back to renderer for user feedback
-- Use error messages that are actionable for users
+**Error handling**: Wrap risky IPC ops in try-catch, send errors to renderer
 
 ```javascript
 try {
   // risky operation
 } catch (err) {
-  event.reply("error-channel", err.message);
+  event.reply("clicker-error", err.message);
 }
 ```
 
-### Naming Conventions
+---
 
-- **Files**: `kebab-case` for files, `PascalCase` for classes/scripts
-- **Variables**: `camelCase`
-- **Constants**: `UPPER_SNAKE_CASE`
-- **IPC channels**: Use action verbs (`start-clicker`, `send-log`, not just `clicker`, `log`)
-- **Functions**: Verb-first (`createWindow()`, `spawnPowerShell()`, not `window()`, `ps()`)
+## PowerShell Scripts
 
-### PowerShell Scripts
+Embed as template strings, use heredoc for multi-line C#, include `Write-Output` for logging.
 
-- Embed PowerShell scripts as template strings in commonjs files
-- Use `Add-Type -TypeDefinition @'...'@` heredoc syntax for multi-line code
-- Include `Write-Output` statements for logging (captured via stdout)
-- Handle exceptions in PowerShell: `try { ... } catch { Write-Output "Error: $_" }`
-
-#### Keyboard Input via keybd_event
+**Hybrid clicker pattern** (C# inside PowerShell):
 
 ```csharp
 [DllImport("user32.dll")]
 public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, uint dwExtraInfo);
-
 public const uint KEYEVENTF_KEYUP = 0x0002;
 public const byte VK_UP = 0x26;
 public const byte VK_DOWN = 0x28;
 public const byte VK_LEFT = 0x25;
 public const byte VK_RIGHT = 0x27;
 
-// Press key
+// Press all 4 arrow keys simultaneously
 keybd_event(VK_UP, 0, 0, 0);
+keybd_event(VK_DOWN, 0, 0, 0);
+keybd_event(VK_LEFT, 0, 0, 0);
+keybd_event(VK_RIGHT, 0, 0, 0);
 Thread.Sleep(30);
-
-// Release key
+// Release all
 keybd_event(VK_UP, 0, KEYEVENTF_KEYUP, 0);
+//... repeat for other keys
 ```
 
-#### Hybrid Clicker Example
+---
 
-```csharp
-public static void HybridClick() {
-  Click();
+## Configuration & Security
 
-  // Press all 4 arrow keys simultaneously
-  keybd_event(VK_UP, 0, 0, 0);
-  keybd_event(VK_DOWN, 0, 0, 0);
-  keybd_event(VK_LEFT, 0, 0, 0);
-  keybd_event(VK_RIGHT, 0, 0, 0);
-  Thread.Sleep(30);
+**BrowserWindow**: `nodeIntegration: true, contextIsolation: false` for inline scripts
 
-  // Release all 4 arrow keys
-  keybd_event(VK_UP, 0, KEYEVENTF_KEYUP, 0);
-  keybd_event(VK_DOWN, 0, KEYEVENTF_KEYUP, 0);
-  keybd_event(VK_LEFT, 0, KEYEVENTF_KEYUP, 0);
-  keybd_event(VK_RIGHT, 0, KEYEVENTF_KEYUP, 0);
-  Thread.Sleep(10);
-}
-```
+**Security warnings**:
 
-```javascript
-const ps1Code = `
-Write-Output "Starting..."
-Add-Type -TypeDefinition @'
-  $code
-'@
-`;
-```
+- These settings are for local utility apps only
+- Never shell-escape user input
+- Validate all IPC data
 
-### BrowserWindow Configuration
+**Git**: Never commit `dist/`, `node_modules/`, `*.exe`, `*.log`, `*.asar`
 
-- Set `nodeIntegration: true, contextIsolation: false` for inline scripts
-- Keep window small (400x300) for utility apps
-- Open DevTools in development: `mainWindow.webContents.openDevTools()`
-
-### Git Workflow
-
-- Never commit: `dist/`, `node_modules/`, `*.exe`, `*.log`, `*.asar`
-- Commit source files only
-- Use concise commit messages with clear intent
-
-### Debugging
-
-- All `console.log()` in main process should send to renderer for visibility
-- Use `Ctrl+Shift+I` to open DevTools in production builds
-- Include process state in logs (PID, script paths, exit codes)
-
-### Security Notes
-
-- ⚠️ `nodeIntegration: true` and `contextIsolation: false` are security risks
-- Only enable for local utility apps, not for internet-connected applications
-- Never shell-escape user input in PowerShell scripts
-- Validate all data received from IPC before use
-
-## Common Patterns
-
-### Temporary File Pattern with Cleanup
-
-```javascript
-const scriptPath = path.join(os.tmpdir(), "script.ps1");
-fs.writeFileSync(scriptPath, code);
-
-const ps = spawn("powershell", ["-File", scriptPath]);
-ps.on("close", (code) => {
-  try {
-    fs.unlinkSync(scriptPath);
-  } catch (e) {}
-  // handle completion
-});
-```
-
-### Logging Across Processes
-
-```javascript
-// Main process
-mainWindow.webContents.send("log", "message");
-
-// Renderer process
-ipcRenderer.on("log", (event, msg) => console.log(msg));
-```
+**Debugging**: Main process logs go to renderer via `mainWindow.webContents.send("log", msg)`. DevTools: `Ctrl+Shift+I`

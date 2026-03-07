@@ -1,7 +1,8 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
-const { exec, writeFile } = require('child_process');
-const path = require('path');
-const fs = require('fs');
+const { app, BrowserWindow, ipcMain } = require("electron");
+const { spawn } = require("child_process");
+const path = require("path");
+const fs = require("fs");
+const os = require("os");
 
 let mainWindow;
 let currentProcess = null;
@@ -12,30 +13,30 @@ function createWindow() {
     height: 300,
     webPreferences: {
       nodeIntegration: true,
-      contextIsolation: false
-    }
+      contextIsolation: false,
+    },
   });
 
-  mainWindow.loadFile('index.html');
+  mainWindow.loadFile("index.html");
   mainWindow.webContents.openDevTools();
 }
 
 app.whenReady().then(createWindow);
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") {
     app.quit();
   }
 });
 
-app.on('activate', () => {
+app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
 });
 
-ipcMain.on('start-clicker', (event) => {
-  mainWindow.webContents.send('log', 'IPC start-clicker received');
+ipcMain.on("start-clicker", (event) => {
+  mainWindow.webContents.send("log", "IPC start-clicker received");
 
   const powerShellScript = `
 try {
@@ -109,60 +110,59 @@ public class MouseClicker {
 }
 `;
 
-  const { spawn } = require('child_process');
-  const os = require('os');
-
-  mainWindow.webContents.send('log', 'Creating temp directory script...');
-  const scriptPath = path.join(os.tmpdir(), 'clicker.ps1');
-  mainWindow.webContents.send('log', 'Script path: ' + scriptPath);
+  mainWindow.webContents.send("log", "Creating temp directory script...");
+  const scriptPath = path.join(os.tmpdir(), "clicker.ps1");
+  mainWindow.webContents.send("log", "Script path: " + scriptPath);
   fs.writeFileSync(scriptPath, powerShellScript);
-  mainWindow.webContents.send('log', 'Script written successfully');
+  mainWindow.webContents.send("log", "Script written successfully");
 
-  mainWindow.webContents.send('log', 'Starting PowerShell process...');
+  mainWindow.webContents.send("log", "Starting PowerShell process...");
 
-  const ps = spawn('powershell.exe', ['-ExecutionPolicy', 'Bypass', '-File', scriptPath], { windowsHide: true });
+  const ps = spawn("powershell.exe", ["-ExecutionPolicy", "Bypass", "-File", scriptPath], {
+    windowsHide: true,
+  });
   currentProcess = ps;
 
-  mainWindow.webContents.send('log', 'PowerShell process started with PID: ' + ps.pid);
+  mainWindow.webContents.send("log", "PowerShell process started with PID: " + ps.pid);
 
-  ps.stdout.on('data', (data) => {
-    mainWindow.webContents.send('ps-output', data.toString());
+  ps.stdout.on("data", (data) => {
+    mainWindow.webContents.send("ps-output", data.toString());
   });
 
-  ps.stderr.on('data', (data) => {
-    mainWindow.webContents.send('ps-error', data.toString());
+  ps.stderr.on("data", (data) => {
+    mainWindow.webContents.send("ps-error", data.toString());
   });
 
-  ps.on('close', (code) => {
-    mainWindow.webContents.send('log', 'PowerShell process closed with code: ' + code);
+  ps.on("close", (code) => {
+    mainWindow.webContents.send("log", "PowerShell process closed with code: " + code);
     if (currentProcess === ps) {
       currentProcess = null;
     }
     try {
       fs.unlinkSync(scriptPath);
-      mainWindow.webContents.send('log', 'Temp script deleted');
+      mainWindow.webContents.send("log", "Temp script deleted");
     } catch (e) {
-      mainWindow.webContents.send('log', 'Error deleting temp script: ' + e.message);
+      mainWindow.webContents.send("log", "Error deleting temp script: " + e.message);
     }
-    mainWindow.webContents.send('log', 'Sending reply...');
+    mainWindow.webContents.send("log", "Sending reply...");
     if (code === 0) {
-      event.reply('clicker-complete');
+      event.reply("clicker-complete");
     } else {
-      event.reply('clicker-error', `Exit code: ${code}`);
+      event.reply("clicker-error", `Exit code: ${code}`);
     }
   });
 
-  ps.on('error', (err) => {
-    mainWindow.webContents.send('log', 'PowerShell process error: ' + err);
+  ps.on("error", (err) => {
+    mainWindow.webContents.send("log", "PowerShell process error: " + err);
     if (currentProcess === ps) {
       currentProcess = null;
     }
-    event.reply('clicker-error', err.message);
+    event.reply("clicker-error", err.message);
   });
 });
 
-ipcMain.on('start-clicker-infinite', (event) => {
-  mainWindow.webContents.send('log', 'IPC start-clicker-infinite received');
+ipcMain.on("start-clicker-infinite", (event) => {
+  mainWindow.webContents.send("log", "IPC start-clicker-infinite received");
 
   const powerShellScript = `
 try {
@@ -226,63 +226,62 @@ public class MouseClicker {
 }
 `;
 
-  const { spawn } = require('child_process');
-  const os = require('os');
-
-  mainWindow.webContents.send('log', 'Creating temp directory script...');
-  const scriptPath = path.join(os.tmpdir(), 'clicker-infinite.ps1');
-  mainWindow.webContents.send('log', 'Script path: ' + scriptPath);
+  mainWindow.webContents.send("log", "Creating temp directory script...");
+  const scriptPath = path.join(os.tmpdir(), "clicker-infinite.ps1");
+  mainWindow.webContents.send("log", "Script path: " + scriptPath);
   fs.writeFileSync(scriptPath, powerShellScript);
-  mainWindow.webContents.send('log', 'Script written successfully');
+  mainWindow.webContents.send("log", "Script written successfully");
 
-  mainWindow.webContents.send('log', 'Starting PowerShell process...');
+  mainWindow.webContents.send("log", "Starting PowerShell process...");
 
-  const ps = spawn('powershell.exe', ['-ExecutionPolicy', 'Bypass', '-File', scriptPath], { windowsHide: true });
+  const ps = spawn("powershell.exe", ["-ExecutionPolicy", "Bypass", "-File", scriptPath], {
+    windowsHide: true,
+  });
   currentProcess = ps;
 
-  mainWindow.webContents.send('log', 'PowerShell process started with PID: ' + ps.pid);
+  mainWindow.webContents.send("log", "PowerShell process started with PID: " + ps.pid);
 
-  ps.stdout.on('data', (data) => {
-    mainWindow.webContents.send('ps-output', data.toString());
+  ps.stdout.on("data", (data) => {
+    mainWindow.webContents.send("ps-output", data.toString());
   });
 
-  ps.stderr.on('data', (data) => {
-    mainWindow.webContents.send('ps-error', data.toString());
+  ps.stderr.on("data", (data) => {
+    mainWindow.webContents.send("ps-error", data.toString());
   });
 
-  ps.on('close', (code) => {
-    mainWindow.webContents.send('log', 'PowerShell process closed with code: ' + code);
+  ps.on("close", (code) => {
+    mainWindow.webContents.send("log", "PowerShell process closed with code: " + code);
     if (currentProcess === ps) {
       currentProcess = null;
     }
     try {
       fs.unlinkSync(scriptPath);
-      mainWindow.webContents.send('log', 'Temp script deleted');
+      mainWindow.webContents.send("log", "Temp script deleted");
     } catch (e) {
-      mainWindow.webContents.send('log', 'Error deleting temp script: ' + e.message);
+      mainWindow.webContents.send("log", "Error deleting temp script: " + e.message);
     }
-    mainWindow.webContents.send('log', 'Sending reply...');
-    event.reply('clicker-complete');
+    mainWindow.webContents.send("log", "Sending reply...");
+    event.reply("clicker-complete");
   });
 
-  ps.on('error', (err) => {
-    mainWindow.webContents.send('log', 'PowerShell process error: ' + err);
+  ps.on("error", (err) => {
+    mainWindow.webContents.send("log", "PowerShell process error: " + err);
     if (currentProcess === ps) {
       currentProcess = null;
     }
-    event.reply('clicker-error', err.message);
+    event.reply("clicker-error", err.message);
   });
 });
 
-ipcMain.on('stop-clicker', () => {
-  mainWindow.webContents.send('log', 'Stop clicker requested');
+ipcMain.on("stop-clicker", () => {
+  mainWindow.webContents.send("log", "Stop clicker requested");
   if (currentProcess) {
-    mainWindow.webContents.send('log', 'Killing PowerShell process PID: ' + currentProcess.pid);
-    currentProcess.kill('SIGTERM');
+    mainWindow.webContents.send("log", "Killing PowerShell process PID: " + currentProcess.pid);
+    currentProcess.kill("SIGTERM");
     currentProcess = null;
-    mainWindow.webContents.send('clicker-stopped');
+    mainWindow.webContents.send("clicker-stopped");
   } else {
-    mainWindow.webContents.send('log', 'No active process to stop');
-    mainWindow.webContents.send('clicker-stopped');
+    mainWindow.webContents.send("log", "No active process to stop");
+    mainWindow.webContents.send("clicker-stopped");
   }
 });

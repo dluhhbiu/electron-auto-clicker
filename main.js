@@ -9,13 +9,12 @@ let currentProcess = null;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 400,
-    height: 300,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
     },
   });
+  mainWindow.maximize();
 
   mainWindow.loadFile("index.html");
   mainWindow.webContents.openDevTools();

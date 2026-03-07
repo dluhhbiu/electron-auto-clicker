@@ -173,4 +173,6 @@ keybd_event(VK_UP, 0, KEYEVENTF_KEYUP, 0);
 
 **Git**: Never commit `dist/`, `node_modules/`, `*.exe`, `*.log`, `*.asar`
 
+**CRITICAL: Git push**: NEVER push to remote without explicit user permission. Always ask before running `git push`.
+
 **Debugging**: Main process logs go to renderer via `mainWindow.webContents.send("log", msg)`. DevTools: `Ctrl+Shift+I`

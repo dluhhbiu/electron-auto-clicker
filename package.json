@@ -6,7 +6,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "electron .",
-    "build-win": "electron-builder --win"
+    "build-win": "electron-builder --win",
+    "lint": "eslint *.js",
+    "lint:fix": "eslint *.js --fix",
+    "format": "prettier --write *.js *.html *.md"
   },
   "build": {
     "appId": "com.clicker.app",
@@ -21,6 +24,8 @@
   "type": "commonjs",
   "devDependencies": {
     "electron": "^40.8.0",
-    "electron-builder": "^26.8.1"
+    "electron-builder": "^26.8.1",
+    "eslint": "^8.57.1",
+    "prettier": "^3.8.1"
   }
 }

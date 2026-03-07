@@ -37,6 +37,40 @@ npm run format              # Format all files
 
 ---
 
+## Windows Build
+
+**On Windows**:
+
+```bash
+npm run build-win           # Build portable .exe in dist/
+```
+
+Creates `dist/win-unpacked/ClikerApp.exe` with bundled Electron runtime.
+
+**Electron Builder config** (`package.json`):
+
+```json
+{
+  "build": {
+    "appId": "com.clicker.app",
+    "productName": "ClickerApp",
+    "win": {
+      "target": "portable"
+    }
+  }
+}
+```
+
+**Cross-platform build (Linux to Windows)**: NOT SUPPORTED - requires Wine. Users must build on Windows.
+
+**Quick rebuild during development** (code changes only):
+
+```bash
+mkdir -p temp_pack && cp main.js index.html package.json .eslintrc.js temp_pack/ && npx asar pack temp_pack dist/win-unpacked/resources/app.asar && rm -rf temp_pack
+```
+
+---
+
 ## Code Style
 
 **Module System**: CommonJS (require/module.exports), `"type": "commonjs"` in package.json

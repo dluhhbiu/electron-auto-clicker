@@ -4,5 +4,6 @@ ClickerApp.exe
 *.log
 debug.log
 *.asar
+*.zip
 electron-builder.yml
 builder-debug.yml

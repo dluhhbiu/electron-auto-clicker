@@ -21,13 +21,16 @@ npm run format -- --check   # Optional format check
 
 Never mark complete if lint/syntax errors exist. Fix first, then report success. Exception: Non-code tasks (docs, git ops).
 
+**CRITICAL: ESLint Configuration** - NEVER modify `.eslintrc.js` without explicit user permission. Linting rules are project configuration and must not be changed automatically.
+
 ---
 
 ## Commands
 
 ```bash
 npm start                   # Run app in dev mode
-npm run build-win           # Build Windows .exe (requires Windows)
+npm run build-win           # Full build: Windows .exe + runtime (работает из Linux)
+npm run rebuild-asar        # Quick rebuild: только перепаковка кода в app.asar
 npm run lint                # Check for errors
 npm run lint:fix            # Auto-fix errors
 npm run format              # Format all files
@@ -39,35 +42,23 @@ npm run format              # Format all files
 
 ## Windows Build
 
-**On Windows**:
+### Полная сборка (первый раз или после обновления Electron)
 
 ```bash
-npm run build-win           # Build portable .exe in dist/
+npm run build-win           # Создаёт dist/win-unpacked/ с ClickerApp.exe и runtime
 ```
 
-Creates `dist/win-unpacked/ClikerApp.exe` with bundled Electron runtime.
+Работает из Linux. Ошибка про Wine/иконку в конце — **некритична**, сборка готова. Создаёт `dist/win-unpacked/ClickerApp.exe` (~213 МБ) с bundled Electron runtime.
 
-**Electron Builder config** (`package.json`):
-
-```json
-{
-  "build": {
-    "appId": "com.clicker.app",
-    "productName": "ClickerApp",
-    "win": {
-      "target": "portable"
-    }
-  }
-}
-```
-
-**Cross-platform build (Linux to Windows)**: NOT SUPPORTED - requires Wine. Users must build on Windows.
-
-**Quick rebuild during development** (code changes only):
+### Быстрая пересборка (после изменений в коде)
 
 ```bash
-mkdir -p temp_pack && cp main.js index.html package.json .eslintrc.js temp_pack/ && npx asar pack temp_pack dist/win-unpacked/resources/app.asar && rm -rf temp_pack
+npm run rebuild-asar        # Перепаковывает main.js, index.html и т.д. в app.asar
 ```
+
+Используй это после правок кода — не нужна полная пересборка, только обновление `dist/win-unpacked/resources/app.asar`.
+
+**ВАЖНО**: После любых изменений в коде всегда запускай `npm run rebuild-asar` перед тестированием .exe.
 
 ---
 
@@ -206,6 +197,8 @@ keybd_event(VK_UP, 0, KEYEVENTF_KEYUP, 0);
 - Validate all IPC data
 
 **Git**: Never commit `dist/`, `node_modules/`, `*.exe`, `*.log`, `*.asar`
+
+**ESLint Configuration**: NEVER modify `.eslintrc.js` without explicit user permission. Linting rules are project configuration and must not be changed automatically.
 
 **CRITICAL: Git operations**: NEVER commit or push without explicit user permission. Always ask before running `git commit` or `git push`.
 

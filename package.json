@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "electron .",
-    "build-win": "electron-builder --win",
+    "build-win": "electron-builder --win --config.win.target=dir",
+    "rebuild-asar": "mkdir -p _tmp && cp main.js index.html package.json .eslintrc.js _tmp/ && npx asar pack _tmp dist/win-unpacked/resources/app.asar && rm -rf _tmp && echo 'app.asar rebuilt'",
     "lint": "eslint *.js",
     "lint:fix": "eslint *.js --fix",
     "format": "prettier --write *.js *.html *.md"

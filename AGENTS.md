@@ -48,7 +48,7 @@ npm run format              # Format all files
 npm run build-win           # Создаёт dist/win-unpacked/ с ClickerApp.exe и runtime
 ```
 
-Работает из Linux. Ошибка про Wine/иконку в конце — **некритична**, сборка готова. Создаёт `dist/win-unpacked/ClickerApp.exe` (~213 МБ) с bundled Electron runtime.
+Работает из Linux. Ошибка про Wine/иконку в конце — **некритична**, сборка готова. **Wine устанавливать НЕ нужно** — ошибка означает лишь то, что не удалось обновить иконку exe-файла, сам билд полностью рабочий. Создаёт `dist/win-unpacked/ClickerApp.exe` (~213 МБ) с bundled Electron runtime.
 
 ### Быстрая пересборка (после изменений в коде)
 

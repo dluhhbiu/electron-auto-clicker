@@ -45,6 +45,58 @@ function stopMouseMove() {
   }
 }
 
+function releaseAllKeys() {
+  const script = `
+Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+
+public class KeyReleaser {
+  [DllImport("user32.dll")]
+  public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, uint dwExtraInfo);
+
+  [DllImport("user32.dll")]
+  public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint cButtons, uint dwExtraInfo);
+
+  public const uint KEYEVENTF_KEYUP = 0x0002;
+  public const uint MOUSEEVENTF_LEFTUP = 0x04;
+
+  public static void ReleaseAll() {
+    // Release mouse button
+    mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+
+    // Release Shift
+    keybd_event(0x10, 0, KEYEVENTF_KEYUP, 0);
+
+    // Release all keys used by hybrid clicker
+    byte[] keys = new byte[] {
+      0x25, 0x26, 0x27, 0x28,
+      0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39,
+      0xBD, 0xBB,
+      0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69,
+      0x6A, 0x6B, 0x6D, 0x6E, 0x6F,
+      0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A,
+      0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50, 0x51, 0x52, 0x53, 0x54,
+      0x55, 0x56, 0x57, 0x58, 0x59, 0x5A,
+      0xBA, 0xBF, 0xC0, 0xDB, 0xDC, 0xDD, 0xDE, 0xBC, 0xBE
+    };
+    for (int i = 0; i < keys.Length; i++)
+      keybd_event(keys[i], 0, KEYEVENTF_KEYUP, 0);
+  }
+}
+'@
+[KeyReleaser]::ReleaseAll()
+`;
+  const scriptPath = uniqueScriptPath("key-release");
+  fs.writeFileSync(scriptPath, script);
+  const ps = spawn("powershell.exe", ["-ExecutionPolicy", "Bypass", "-File", scriptPath], {
+    windowsHide: true,
+  });
+  ps.on("close", () => {
+    try { fs.unlinkSync(scriptPath); } catch (_e) { _e; }
+  });
+}
+
 function registerGlobalEsc() {
   try {
     globalShortcut.register("Escape", () => {
@@ -403,6 +455,7 @@ ipcMain.on("stop-clicker", () => {
     mainWindow.webContents.send("log", "Killing clicker PID: " + clickerProcess.pid);
     spawn("taskkill", ["/PID", String(clickerProcess.pid), "/T", "/F"]);
     clickerProcess = null;
+    releaseAllKeys();
   }
   if (moveProcess) {
     mainWindow.webContents.send("log", "Killing move PID: " + moveProcess.pid);

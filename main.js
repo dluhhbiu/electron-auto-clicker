@@ -852,7 +852,7 @@ while ($true) {
       ps.kill();
     }
     if (output.includes("CANCELLED")) {
-      event.reply("mouse-click-error", "Отменено");
+      event.reply("mouse-click-error", "Cancelled");
       ps.kill();
     }
   });

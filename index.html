@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>Автокликер</title>
+    <title>Auto Clicker</title>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -168,22 +168,22 @@
     </style>
   </head>
   <body>
-    <h1>Автокликер</h1>
+    <h1>Auto Clicker</h1>
     <div class="buttons">
-      <button id="startBtn">Клики (10 сек)</button>
-      <button id="startInfiniteBtn">Клики до ESC</button>
+      <button id="startBtn">Clicks (10 sec)</button>
+      <button id="startInfiniteBtn">Clicks until ESC</button>
     </div>
     <div class="buttons">
-      <button id="startHybridBtn">Клик+Клавиши (10 сек)</button>
-      <button id="startHybridInfiniteBtn">Клик+Клавиши до ESC</button>
+      <button id="startHybridBtn">Click+Keys (10 sec)</button>
+      <button id="startHybridInfiniteBtn">Click+Keys until ESC</button>
     </div>
-    <div id="status">Нажмите для старта</div>
-    <div class="escape-hint" id="escapeHint" style="display: none">Нажмите ESC для остановки</div>
+    <div id="status">Press to start</div>
+    <div class="escape-hint" id="escapeHint" style="display: none">Press ESC to stop</div>
 
     <div class="coordinate-section">
-      <h2>Перемещение курсора по координатам</h2>
+      <h2>Cursor Movement by Coordinates</h2>
       <div class="coordinate-inputs">
-        <label>Интервал (мс):</label>
+        <label>Interval (ms):</label>
         <input
           type="number"
           id="coordInterval"
@@ -192,10 +192,10 @@
           value="5000"
           style="width: 100px"
         />
-        <button id="selectCoordBtn" class="select-coord-btn">Добавить точку кликом</button>
+        <button id="selectCoordBtn" class="select-coord-btn">Add point by clicking</button>
       </div>
       <div class="coordinates-list" id="coordinatesList">
-        <div class="empty-list">Нет координат</div>
+        <div class="empty-list">No coordinates</div>
       </div>
     </div>
 
@@ -218,7 +218,7 @@
 
       function renderCoordinates() {
         if (coordinates.length === 0) {
-          coordinatesList.innerHTML = '<div class="empty-list">Нет координат</div>';
+          coordinatesList.innerHTML = '<div class="empty-list">No coordinates</div>';
           return;
         }
         coordinatesList.innerHTML = coordinates
@@ -226,16 +226,16 @@
             (coord, index) => `
           <div class="coordinate-item">
             <div style="flex: 1">
-              <div style="font-family: monospace; font-size: 14px; margin-bottom: 5px">(${coord.x}, ${coord.y}) - Интервал: ${coord.interval}мс</div>
+              <div style="font-family: monospace; font-size: 14px; margin-bottom: 5px">(${coord.x}, ${coord.y}) - Interval: ${coord.interval}ms</div>
               <div style="display: flex; align-items: center; gap: 5px">
-                <label style="font-size: 12px">Интервал:</label>
+                <label style="font-size: 12px">Interval:</label>
                 <input type="number" value="${coord.interval}" min="10" style="padding: 3px; width: 70px; font-size: 12px" 
                   onchange="updateCoordInterval(${index}, this.value)" />
               </div>
             </div>
             <div style="display: flex; gap: 5px">
-              <button class="delete-btn" data-index="${index}" style="background: #ff9800">Изменить позицию</button>
-              <button class="delete-btn" data-index="${index}">Удалить</button>
+              <button class="delete-btn" data-index="${index}" style="background: #ff9800">Change position</button>
+              <button class="delete-btn" data-index="${index}">Delete</button>
             </div>
           </div>
         `
@@ -244,13 +244,13 @@
         document.querySelectorAll(".delete-btn").forEach((btn) => {
           btn.addEventListener("click", (e) => {
             const index = parseInt(e.target.dataset.index);
-            if (e.target.textContent === "Удалить") {
+            if (e.target.textContent === "Delete") {
               coordinates.splice(index, 1);
               renderCoordinates();
-            } else if (e.target.textContent === "Изменить позицию") {
+            } else if (e.target.textContent === "Change position") {
               editingIndex = index;
               selectCoordBtn.disabled = true;
-              selectCoordBtn.textContent = "Кликните в новую позицию...";
+              selectCoordBtn.textContent = "Click on new position...";
               ipcRenderer.send("capture-mouse-click");
             }
           });
@@ -260,7 +260,7 @@
       window.updateCoordInterval = function (index, value) {
         const interval = parseInt(value);
         if (isNaN(interval) || interval < 10) {
-          alert("Интервал должен быть минимум 10 мс");
+          alert("Interval must be at least 10 ms");
           renderCoordinates();
           return;
         }
@@ -271,7 +271,7 @@
       selectCoordBtn.addEventListener("click", () => {
         console.log("Select coord button clicked");
         selectCoordBtn.disabled = true;
-        selectCoordBtn.textContent = "Кликните в любое место...";
+        selectCoordBtn.textContent = "Click anywhere...";
         ipcRenderer.send("capture-mouse-click");
       });
 
@@ -286,15 +286,15 @@
         }
         renderCoordinates();
         selectCoordBtn.disabled = false;
-        selectCoordBtn.textContent = "Добавить точку кликом";
+        selectCoordBtn.textContent = "Add point by clicking";
       });
 
       ipcRenderer.on("mouse-click-error", (_event, error) => {
         console.log("Mouse click error:", error);
         editingIndex = -1;
         selectCoordBtn.disabled = false;
-        selectCoordBtn.textContent = "Добавить точку кликом";
-        if (error !== "Отменено") alert("Ошибка: " + error);
+        selectCoordBtn.textContent = "Add point by clicking";
+        if (error !== "Cancelled") alert("Error: " + error);
       });
 
       function disableAllButtons() {
@@ -310,28 +310,28 @@
 
       startBtn.addEventListener("click", () => {
         disableAllButtons();
-        status.textContent = "Кликание в течение 10 секунд...";
+        status.textContent = "Clicking for 10 seconds...";
         escapeHint.style.display = "none";
         ipcRenderer.send("start-clicker", { coordinates: getCoords() });
       });
 
       startInfiniteBtn.addEventListener("click", () => {
         disableAllButtons();
-        status.textContent = "Кликание... (нажмите ESC для остановки)";
+        status.textContent = "Clicking... (press ESC to stop)";
         escapeHint.style.display = "block";
         ipcRenderer.send("start-clicker-infinite", { coordinates: getCoords() });
       });
 
       startHybridBtn.addEventListener("click", () => {
         disableAllButtons();
-        status.textContent = "Клики + клавиши в течение 10 секунд...";
+        status.textContent = "Clicks + keys for 10 seconds...";
         escapeHint.style.display = "none";
         ipcRenderer.send("start-hybrid-clicker", { coordinates: getCoords() });
       });
 
       startHybridInfiniteBtn.addEventListener("click", () => {
         disableAllButtons();
-        status.textContent = "Клики + клавиши... (нажмите ESC для остановки)";
+        status.textContent = "Clicks + keys... (press ESC to stop)";
         escapeHint.style.display = "block";
         ipcRenderer.send("start-hybrid-clicker-infinite", { coordinates: getCoords() });
       });
@@ -348,7 +348,7 @@
         startInfiniteBtn.disabled = false;
         startHybridBtn.disabled = false;
         startHybridInfiniteBtn.disabled = false;
-        status.textContent = "Готово! Кликание завершено.";
+        status.textContent = "Done! Clicking complete.";
         escapeHint.style.display = "none";
         console.log("Clicker complete");
       });
@@ -358,7 +358,7 @@
         startInfiniteBtn.disabled = false;
         startHybridBtn.disabled = false;
         startHybridInfiniteBtn.disabled = false;
-        status.textContent = "Кликание остановлено.";
+        status.textContent = "Clicking stopped.";
         escapeHint.style.display = "none";
         console.log("Clicker stopped");
       });
@@ -368,7 +368,7 @@
         startInfiniteBtn.disabled = false;
         startHybridBtn.disabled = false;
         startHybridInfiniteBtn.disabled = false;
-        status.textContent = "Ошибка: " + error;
+        status.textContent = "Error: " + error;
         escapeHint.style.display = "none";
         console.log("Clicker error:", error);
       });

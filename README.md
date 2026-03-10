@@ -4,8 +4,11 @@ A simple application for automatic left mouse button clicking over a specified d
 
 Works great with [Bongo Cat](https://store.steampowered.com/app/3419430/Bongo_Cat/):
 
-- **Hybrid mode**: ~20,000 clicks per minute | ~1.2 million per hour | 25+ million per day
-- **Coordinate clicking**: automatically collects chests by clicking at specified screen positions
+| Per minute | Per hour | Per day |
+|:---:|:---:|:---:|
+| ~20,000 | ~1.2 million | **25+ million** ❗ |
+
+- **Coordinate clicking** — automatically collects chests by clicking at specified screen positions
 
 ![Demo](demo.gif)
 <!-- TODO: replace with actual GIF showing how to use the app -->

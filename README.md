@@ -1,84 +1,92 @@
 # Auto Clicker for Windows
 
-Простое приложение для автоматического кликания левой кнопкой мыши в течение заданного времени. Поддерживает два режима: только клики и гибридный режим (клик + клавиатура).
+A simple application for automatic left mouse button clicking over a specified duration. Supports two modes: clicks only and hybrid mode (click + keyboard).
 
-## 🚀 Для обычных пользователей
+Works great with [Bongo Cat](https://store.steampowered.com/app/3419430/Bongo_Cat/):
 
-### Требования
+- **Hybrid mode**: ~20,000 clicks per minute | ~1.2 million per hour | 25+ million per day
+- **Coordinate clicking**: automatically collects chests by clicking at specified screen positions
 
-- Windows 10 и выше
-- Интернет-соединение только для скачивания
+![Demo](demo.gif)
+<!-- TODO: replace with actual GIF showing how to use the app -->
 
-### Быстрый старт
+## For Regular Users
 
-1. [Скачать готовую версию](https://github.com/dluhhbiu/electron-auto-clicker/releases) (файл .exe)
-2. Запустить скачанный файл
-3. Нажать кнопку для старта
-4. Навести курсор на нужное место
+### Requirements
 
-### Режимы работы
+- Windows 10 or later
+- Internet connection only for downloading
 
-#### 1. Только клики
+### Quick Start
 
-- Нажмите "Клики (10 сек)" или "Клики до ESC"
-- Приложение будет кликать левой кнопкой мыши
-- Каждый клик занимает ~70 мс
+1. [Download the latest release](https://github.com/dluhhbiu/electron-auto-clicker/releases) (.exe file)
+2. Run the downloaded file
+3. Press the button to start
+4. Move the cursor to the desired location
 
-#### 2. Гибридный режим (клик + клавиатура)
+### Operating Modes
 
-- Нажмите "Клик+Клавиши (10 сек)" или "Клик+Клавиши до ESC"
-- Каждый цикл выполнять: 1 клик + 4 нажатия на стрелки (↑ ↓ ← →) параллельно
-- Подходит для игр с лимитами на частоту кликов
+#### 1. Clicks Only
 
-### Управление
+- Press "Clicks (10 sec)" or "Clicks until ESC"
+- The application will click the left mouse button
+- Each click takes ~70 ms
 
-- Все кнопки становятся неактивными во время работы
-- Нажмите `ESC` для остановки бесконечных режимов
-- Все логи отображаются в консоли приложения (F12)
+#### 2. Hybrid Mode (click + keyboard)
 
-### Безопасность
+- Press "Click+Keys (10 sec)" or "Click+Keys until ESC"
+- Each cycle performs: 1 click + 4 arrow key presses (up down left right) in parallel
+- Suitable for games with click frequency limits
 
-Приложение не требует прав администратора, не модифицирует системные файлы и не собирает никаких данных.
+### Controls
+
+- All buttons become disabled while running
+- Press `ESC` to stop infinite modes
+- All logs are displayed in the application console (F12)
+
+### Security
+
+The application does not require administrator privileges, does not modify system files, and does not collect any data.
 
 ---
 
-## 👨‍💻 Для разработчиков
+## For Developers
 
-### Требования
+### Requirements
 
-- Node.js 16+ [скачать здесь](https://nodejs.org/)
-- npm (устанавливается вместе с Node.js)
-- Git (опционально)
+- Node.js 16+ [download here](https://nodejs.org/)
+- npm (installed with Node.js)
+- Git (optional)
 
-### Установка зависимостей
+### Install Dependencies
 
 ```bash
 npm install
 ```
 
-### Запуск в режиме разработки
+### Run in Development Mode
 
 ```bash
 npm start
 ```
 
-### Сборка исполняемого файла
+### Build Executable
 
-Для Windows:
+For Windows:
 
 ```bash
 npm install --save-dev electron-builder
 npm run build-win
 ```
 
-Готовый файл будет в папке `dist/`
+The output file will be in the `dist/` folder.
 
-## Архитектура
+## Architecture
 
-- **Main Process**: main.js - управляет процессами PowerShell
-- **Renderer Process**: index.html - пользовательский интерфейс
-- **Коммуникация**: IPC между main и renderer процессами
+- **Main Process**: main.js - manages PowerShell processes
+- **Renderer Process**: index.html - user interface
+- **Communication**: IPC between main and renderer processes
 
-## Лицензия
+## License
 
 MIT

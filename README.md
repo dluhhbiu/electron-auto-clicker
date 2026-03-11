@@ -8,11 +8,11 @@ Works great with [Bongo Cat](https://store.steampowered.com/app/3419430/Bongo_Ca
 |:---:|:---:|:---:|
 | ~20,000 | ~1.2 million | **25+ million** ❗ |
 
-![Clicks demo](clicks.gif)
+![Clicks demo](docs/clicks.gif)
 
 - **Coordinate clicking** — automatically collects chests by clicking at specified screen positions
 
-![Coordinate clicking demo](coord.gif)
+![Coordinate clicking demo](docs/coord.gif)
 
 ## For Regular Users
 

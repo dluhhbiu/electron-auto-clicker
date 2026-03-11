@@ -165,25 +165,47 @@
         font-size: 14px;
         padding: 10px;
       }
+      .lang-selector {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+      }
+      .lang-selector select {
+        padding: 5px 10px;
+        font-size: 14px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background: #fff;
+        cursor: pointer;
+      }
     </style>
   </head>
   <body>
-    <h1>Auto Clicker</h1>
+    <div class="lang-selector">
+      <select id="langSelect">
+        <option value="en">English</option>
+        <option value="zh">中文</option>
+        <option value="es">Español</option>
+        <option value="fr">Français</option>
+        <option value="ru">Русский</option>
+      </select>
+    </div>
+    <h1 data-i18n="title">Auto Clicker</h1>
     <div class="buttons">
-      <button id="startBtn">Clicks (10 sec)</button>
-      <button id="startInfiniteBtn">Clicks until ESC</button>
+      <button id="startBtn" data-i18n="clicks10sec">Clicks (10 sec)</button>
+      <button id="startInfiniteBtn" data-i18n="clicksEsc">Clicks until ESC</button>
     </div>
     <div class="buttons">
-      <button id="startHybridBtn">Click+Keys (10 sec)</button>
-      <button id="startHybridInfiniteBtn">Click+Keys until ESC</button>
+      <button id="startHybridBtn" data-i18n="clickKeys10sec">Click+Keys (10 sec)</button>
+      <button id="startHybridInfiniteBtn" data-i18n="clickKeysEsc">Click+Keys until ESC</button>
     </div>
-    <div id="status">Press to start</div>
-    <div class="escape-hint" id="escapeHint" style="display: none">Press ESC to stop</div>
+    <div id="status" data-i18n="pressToStart">Press to start</div>
+    <div class="escape-hint" id="escapeHint" style="display: none" data-i18n="pressEscToStop">Press ESC to stop</div>
 
     <div class="coordinate-section">
-      <h2>Cursor Movement by Coordinates</h2>
+      <h2 data-i18n="cursorMovement">Cursor Movement by Coordinates</h2>
       <div class="coordinate-inputs">
-        <label>Interval (ms):</label>
+        <label data-i18n="intervalMs">Interval (ms):</label>
         <input
           type="number"
           id="coordInterval"
@@ -192,10 +214,10 @@
           value="5000"
           style="width: 100px"
         />
-        <button id="selectCoordBtn" class="select-coord-btn">Add point by clicking</button>
+        <button id="selectCoordBtn" class="select-coord-btn" data-i18n="addPoint">Add point by clicking</button>
       </div>
       <div class="coordinates-list" id="coordinatesList">
-        <div class="empty-list">No coordinates</div>
+        <div class="empty-list" data-i18n="noCoordinates">No coordinates</div>
       </div>
     </div>
 
@@ -209,16 +231,174 @@
       const escapeHint = document.getElementById("escapeHint");
       const coordInterval = document.getElementById("coordInterval");
       const coordinatesList = document.getElementById("coordinatesList");
+      const langSelect = document.getElementById("langSelect");
 
       console.log("App started");
 
+      // ── i18n ──
+      const translations = {
+        en: {
+          title: "Auto Clicker",
+          clicks10sec: "Clicks (10 sec)",
+          clicksEsc: "Clicks until ESC",
+          clickKeys10sec: "Click+Keys (10 sec)",
+          clickKeysEsc: "Click+Keys until ESC",
+          pressToStart: "Press to start",
+          pressEscToStop: "Press ESC to stop",
+          cursorMovement: "Cursor Movement by Coordinates",
+          intervalMs: "Interval (ms):",
+          addPoint: "Add point by clicking",
+          noCoordinates: "No coordinates",
+          interval: "Interval:",
+          changePosition: "Change position",
+          delete: "Delete",
+          clickAnywhere: "Click anywhere...",
+          clickNewPosition: "Click on new position...",
+          intervalMin10: "Interval must be at least 10 ms",
+          clicking10sec: "Clicking for 10 seconds...",
+          clickingEsc: "Clicking... (press ESC to stop)",
+          clicksKeys10sec: "Clicks + keys for 10 seconds...",
+          clicksKeysEsc: "Clicks + keys... (press ESC to stop)",
+          done: "Done! Clicking complete.",
+          stopped: "Clicking stopped.",
+          error: "Error: ",
+        },
+        zh: {
+          title: "自动点击器",
+          clicks10sec: "点击 (10 秒)",
+          clicksEsc: "点击直到 ESC",
+          clickKeys10sec: "点击+按键 (10 秒)",
+          clickKeysEsc: "点击+按键直到 ESC",
+          pressToStart: "按下开始",
+          pressEscToStop: "按 ESC 停止",
+          cursorMovement: "按坐标移动光标",
+          intervalMs: "间隔 (毫秒):",
+          addPoint: "点击添加坐标",
+          noCoordinates: "没有坐标",
+          interval: "间隔:",
+          changePosition: "更改位置",
+          delete: "删除",
+          clickAnywhere: "点击任意位置...",
+          clickNewPosition: "点击新位置...",
+          intervalMin10: "间隔不能少于 10 毫秒",
+          clicking10sec: "点击中，持续 10 秒...",
+          clickingEsc: "点击中... (按 ESC 停止)",
+          clicksKeys10sec: "点击+按键，持续 10 秒...",
+          clicksKeysEsc: "点击+按键... (按 ESC 停止)",
+          done: "完成！点击结束。",
+          stopped: "点击已停止。",
+          error: "错误: ",
+        },
+        es: {
+          title: "Auto Clicker",
+          clicks10sec: "Clics (10 seg)",
+          clicksEsc: "Clics hasta ESC",
+          clickKeys10sec: "Clics+Teclas (10 seg)",
+          clickKeysEsc: "Clics+Teclas hasta ESC",
+          pressToStart: "Pulsa para comenzar",
+          pressEscToStop: "Pulsa ESC para detener",
+          cursorMovement: "Movimiento del cursor por coordenadas",
+          intervalMs: "Intervalo (ms):",
+          addPoint: "Añadir punto haciendo clic",
+          noCoordinates: "Sin coordenadas",
+          interval: "Intervalo:",
+          changePosition: "Cambiar posición",
+          delete: "Eliminar",
+          clickAnywhere: "Haz clic en cualquier lugar...",
+          clickNewPosition: "Haz clic en la nueva posición...",
+          intervalMin10: "El intervalo debe ser al menos 10 ms",
+          clicking10sec: "Haciendo clic durante 10 segundos...",
+          clickingEsc: "Haciendo clic... (pulsa ESC para detener)",
+          clicksKeys10sec: "Clics + teclas durante 10 segundos...",
+          clicksKeysEsc: "Clics + teclas... (pulsa ESC para detener)",
+          done: "¡Listo! Clics completados.",
+          stopped: "Clics detenidos.",
+          error: "Error: ",
+        },
+        fr: {
+          title: "Auto Clicker",
+          clicks10sec: "Clics (10 sec)",
+          clicksEsc: "Clics jusqu'à ESC",
+          clickKeys10sec: "Clics+Touches (10 sec)",
+          clickKeysEsc: "Clics+Touches jusqu'à ESC",
+          pressToStart: "Appuyez pour démarrer",
+          pressEscToStop: "Appuyez sur ESC pour arrêter",
+          cursorMovement: "Déplacement du curseur par coordonnées",
+          intervalMs: "Intervalle (ms) :",
+          addPoint: "Ajouter un point en cliquant",
+          noCoordinates: "Aucune coordonnée",
+          interval: "Intervalle :",
+          changePosition: "Changer la position",
+          delete: "Supprimer",
+          clickAnywhere: "Cliquez n'importe où...",
+          clickNewPosition: "Cliquez sur la nouvelle position...",
+          intervalMin10: "L'intervalle doit être d'au moins 10 ms",
+          clicking10sec: "Clics pendant 10 secondes...",
+          clickingEsc: "Clics en cours... (appuyez sur ESC pour arrêter)",
+          clicksKeys10sec: "Clics + touches pendant 10 secondes...",
+          clicksKeysEsc: "Clics + touches... (appuyez sur ESC pour arrêter)",
+          done: "Terminé ! Clics effectués.",
+          stopped: "Clics arrêtés.",
+          error: "Erreur : ",
+        },
+        ru: {
+          title: "Авто Кликер",
+          clicks10sec: "Клики (10 сек)",
+          clicksEsc: "Клики до ESC",
+          clickKeys10sec: "Клики+Клавиши (10 сек)",
+          clickKeysEsc: "Клики+Клавиши до ESC",
+          pressToStart: "Нажмите для запуска",
+          pressEscToStop: "Нажмите ESC для остановки",
+          cursorMovement: "Перемещение курсора по координатам",
+          intervalMs: "Интервал (мс):",
+          addPoint: "Добавить точку кликом",
+          noCoordinates: "Нет координат",
+          interval: "Интервал:",
+          changePosition: "Изменить позицию",
+          delete: "Удалить",
+          clickAnywhere: "Кликните в любое место...",
+          clickNewPosition: "Кликните на новую позицию...",
+          intervalMin10: "Интервал должен быть не менее 10 мс",
+          clicking10sec: "Кликаю 10 секунд...",
+          clickingEsc: "Кликаю... (нажмите ESC для остановки)",
+          clicksKeys10sec: "Клики + клавиши 10 секунд...",
+          clicksKeysEsc: "Клики + клавиши... (нажмите ESC для остановки)",
+          done: "Готово! Клики завершены.",
+          stopped: "Клики остановлены.",
+          error: "Ошибка: ",
+        },
+      };
+
+      let currentLang = localStorage.getItem("lang") || "en";
+      langSelect.value = currentLang;
+
+      function t(key) {
+        return (translations[currentLang] && translations[currentLang][key]) || translations.en[key] || key;
+      }
+
+      function applyTranslations() {
+        document.querySelectorAll("[data-i18n]").forEach((el) => {
+          const key = el.getAttribute("data-i18n");
+          el.textContent = t(key);
+        });
+        document.title = t("title");
+        renderCoordinates();
+      }
+
+      langSelect.addEventListener("change", () => {
+        currentLang = langSelect.value;
+        localStorage.setItem("lang", currentLang);
+        applyTranslations();
+      });
+
+      // ── Coordinates ──
       let coordinates = [];
       let editingIndex = -1;
       const selectCoordBtn = document.getElementById("selectCoordBtn");
 
       function renderCoordinates() {
         if (coordinates.length === 0) {
-          coordinatesList.innerHTML = '<div class="empty-list">No coordinates</div>';
+          coordinatesList.innerHTML = `<div class="empty-list">${t("noCoordinates")}</div>`;
           return;
         }
         coordinatesList.innerHTML = coordinates
@@ -226,33 +406,35 @@
             (coord, index) => `
           <div class="coordinate-item">
             <div style="flex: 1">
-              <div style="font-family: monospace; font-size: 14px; margin-bottom: 5px">(${coord.x}, ${coord.y}) - Interval: ${coord.interval}ms</div>
+              <div style="font-family: monospace; font-size: 14px; margin-bottom: 5px">(${coord.x}, ${coord.y}) - ${t("interval")} ${coord.interval}ms</div>
               <div style="display: flex; align-items: center; gap: 5px">
-                <label style="font-size: 12px">Interval:</label>
-                <input type="number" value="${coord.interval}" min="10" style="padding: 3px; width: 70px; font-size: 12px" 
+                <label style="font-size: 12px">${t("interval")}</label>
+                <input type="number" value="${coord.interval}" min="10" style="padding: 3px; width: 70px; font-size: 12px"
                   onchange="updateCoordInterval(${index}, this.value)" />
               </div>
             </div>
             <div style="display: flex; gap: 5px">
-              <button class="delete-btn" data-index="${index}" style="background: #ff9800">Change position</button>
-              <button class="delete-btn" data-index="${index}">Delete</button>
+              <button class="delete-btn change-pos-btn" data-index="${index}" style="background: #ff9800">${t("changePosition")}</button>
+              <button class="delete-btn remove-btn" data-index="${index}">${t("delete")}</button>
             </div>
           </div>
         `
           )
           .join("");
-        document.querySelectorAll(".delete-btn").forEach((btn) => {
+        document.querySelectorAll(".remove-btn").forEach((btn) => {
           btn.addEventListener("click", (e) => {
             const index = parseInt(e.target.dataset.index);
-            if (e.target.textContent === "Delete") {
-              coordinates.splice(index, 1);
-              renderCoordinates();
-            } else if (e.target.textContent === "Change position") {
-              editingIndex = index;
-              selectCoordBtn.disabled = true;
-              selectCoordBtn.textContent = "Click on new position...";
-              ipcRenderer.send("capture-mouse-click");
-            }
+            coordinates.splice(index, 1);
+            renderCoordinates();
+          });
+        });
+        document.querySelectorAll(".change-pos-btn").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            const index = parseInt(e.target.dataset.index);
+            editingIndex = index;
+            selectCoordBtn.disabled = true;
+            selectCoordBtn.textContent = t("clickNewPosition");
+            ipcRenderer.send("capture-mouse-click");
           });
         });
       }
@@ -260,7 +442,7 @@
       window.updateCoordInterval = function (index, value) {
         const interval = parseInt(value);
         if (isNaN(interval) || interval < 10) {
-          alert("Interval must be at least 10 ms");
+          alert(t("intervalMin10"));
           renderCoordinates();
           return;
         }
@@ -271,7 +453,7 @@
       selectCoordBtn.addEventListener("click", () => {
         console.log("Select coord button clicked");
         selectCoordBtn.disabled = true;
-        selectCoordBtn.textContent = "Click anywhere...";
+        selectCoordBtn.textContent = t("clickAnywhere");
         ipcRenderer.send("capture-mouse-click");
       });
 
@@ -286,22 +468,30 @@
         }
         renderCoordinates();
         selectCoordBtn.disabled = false;
-        selectCoordBtn.textContent = "Add point by clicking";
+        selectCoordBtn.textContent = t("addPoint");
       });
 
       ipcRenderer.on("mouse-click-error", (_event, error) => {
         console.log("Mouse click error:", error);
         editingIndex = -1;
         selectCoordBtn.disabled = false;
-        selectCoordBtn.textContent = "Add point by clicking";
-        if (error !== "Cancelled") alert("Error: " + error);
+        selectCoordBtn.textContent = t("addPoint");
+        if (error !== "Cancelled") alert(t("error") + error);
       });
 
+      // ── Clicker controls ──
       function disableAllButtons() {
         startBtn.disabled = true;
         startInfiniteBtn.disabled = true;
         startHybridBtn.disabled = true;
         startHybridInfiniteBtn.disabled = true;
+      }
+
+      function enableAllButtons() {
+        startBtn.disabled = false;
+        startInfiniteBtn.disabled = false;
+        startHybridBtn.disabled = false;
+        startHybridInfiniteBtn.disabled = false;
       }
 
       function getCoords() {
@@ -310,28 +500,28 @@
 
       startBtn.addEventListener("click", () => {
         disableAllButtons();
-        status.textContent = "Clicking for 10 seconds...";
+        status.textContent = t("clicking10sec");
         escapeHint.style.display = "none";
         ipcRenderer.send("start-clicker", { coordinates: getCoords() });
       });
 
       startInfiniteBtn.addEventListener("click", () => {
         disableAllButtons();
-        status.textContent = "Clicking... (press ESC to stop)";
+        status.textContent = t("clickingEsc");
         escapeHint.style.display = "block";
         ipcRenderer.send("start-clicker-infinite", { coordinates: getCoords() });
       });
 
       startHybridBtn.addEventListener("click", () => {
         disableAllButtons();
-        status.textContent = "Clicks + keys for 10 seconds...";
+        status.textContent = t("clicksKeys10sec");
         escapeHint.style.display = "none";
         ipcRenderer.send("start-hybrid-clicker", { coordinates: getCoords() });
       });
 
       startHybridInfiniteBtn.addEventListener("click", () => {
         disableAllButtons();
-        status.textContent = "Clicks + keys... (press ESC to stop)";
+        status.textContent = t("clicksKeysEsc");
         escapeHint.style.display = "block";
         ipcRenderer.send("start-hybrid-clicker-infinite", { coordinates: getCoords() });
       });
@@ -344,31 +534,22 @@
       });
 
       ipcRenderer.on("clicker-complete", () => {
-        startBtn.disabled = false;
-        startInfiniteBtn.disabled = false;
-        startHybridBtn.disabled = false;
-        startHybridInfiniteBtn.disabled = false;
-        status.textContent = "Done! Clicking complete.";
+        enableAllButtons();
+        status.textContent = t("done");
         escapeHint.style.display = "none";
         console.log("Clicker complete");
       });
 
       ipcRenderer.on("clicker-stopped", () => {
-        startBtn.disabled = false;
-        startInfiniteBtn.disabled = false;
-        startHybridBtn.disabled = false;
-        startHybridInfiniteBtn.disabled = false;
-        status.textContent = "Clicking stopped.";
+        enableAllButtons();
+        status.textContent = t("stopped");
         escapeHint.style.display = "none";
         console.log("Clicker stopped");
       });
 
       ipcRenderer.on("clicker-error", (event, error) => {
-        startBtn.disabled = false;
-        startInfiniteBtn.disabled = false;
-        startHybridBtn.disabled = false;
-        startHybridInfiniteBtn.disabled = false;
-        status.textContent = "Error: " + error;
+        enableAllButtons();
+        status.textContent = t("error") + error;
         escapeHint.style.display = "none";
         console.log("Clicker error:", error);
       });
@@ -396,6 +577,9 @@
       ipcRenderer.on("move-error", (event, error) => {
         console.log("Mouse move error:", error);
       });
+
+      // Apply translations on load
+      applyTranslations();
     </script>
   </body>
 </html>

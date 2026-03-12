@@ -7,7 +7,7 @@ Electron-based auto-clicker using PowerShell SendInput API. Two processes:
 - **Main Process** (`main.js`): Spawns PowerShell scripts, manages IPC
 - **Renderer Process** (`index.html`): UI, displays logs, sends commands
 
-**Features**: Mouse-only mode (~70ms/click) and hybrid mode (click + 4 arrow keys simultaneously).
+**Features**: Mouse-only mode (~30ms/click) and hybrid mode (click + 93 keys in 2 batches, ~50ms/cycle, ~6400 actions/10sec).
 
 ## Validation Rules (CRITICAL)
 
@@ -173,15 +173,9 @@ public const byte VK_DOWN = 0x28;
 public const byte VK_LEFT = 0x25;
 public const byte VK_RIGHT = 0x27;
 
-// Press all 4 arrow keys simultaneously
-keybd_event(VK_UP, 0, 0, 0);
-keybd_event(VK_DOWN, 0, 0, 0);
-keybd_event(VK_LEFT, 0, 0, 0);
-keybd_event(VK_RIGHT, 0, 0, 0);
-Thread.Sleep(30);
-// Release all
-keybd_event(VK_UP, 0, KEYEVENTF_KEYUP, 0);
-//... repeat for other keys
+// Batch 1: mouse + all keys (no Shift) - down, Sleep(15), up, Sleep(10)
+// Batch 2: Shift + alpha keys - down, Sleep(15), up, Sleep(10)
+// Total: ~50ms per cycle, ~6400 actions per 10 seconds
 ```
 
 ---

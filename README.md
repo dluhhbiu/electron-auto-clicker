@@ -6,7 +6,7 @@ Works great with [Bongo Cat](https://store.steampowered.com/app/3419430/Bongo_Ca
 
 | Per minute | Per hour | Per day |
 |:---:|:---:|:---:|
-| ~20,000 | ~1.2 million | **25+ million** ❗ |
+| ~38,400 | ~2.3 million | **25+ million** ❗ |
 
 ![Clicks demo](docs/clicks.gif)
 
@@ -34,12 +34,13 @@ Works great with [Bongo Cat](https://store.steampowered.com/app/3419430/Bongo_Ca
 
 - Press "Clicks (10 sec)" or "Clicks until ESC"
 - The application will click the left mouse button
-- Each click takes ~70 ms
+- Each click takes ~30 ms
 
 #### 2. Hybrid Mode (click + keyboard)
 
 - Press "Click+Keys (10 sec)" or "Click+Keys until ESC"
-- Each cycle performs: 1 click + 4 arrow key presses (up down left right) in parallel
+- Each cycle performs: 1 click + 93 key presses (letters, digits, arrows, F13-F24) in 2 batches
+- ~50 ms per cycle, optimized for maximum throughput
 - Suitable for games with click frequency limits
 
 ### Controls

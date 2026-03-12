@@ -1,12 +1,12 @@
 {
   "name": "clicker-app",
-  "version": "1.3.2",
+  "version": "1.4.0",
   "description": "",
   "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "electron .",
-    "build-win": "electron-builder --win --config.win.target=dir",
+    "build-win": "electron-builder --win",
     "rebuild-asar": "mkdir -p _tmp && cp main.js index.html package.json .eslintrc.js _tmp/ && npx asar pack _tmp dist/win-unpacked/resources/app.asar && rm -rf _tmp && echo 'app.asar rebuilt'",
     "lint": "eslint *.js",
     "lint:fix": "eslint *.js --fix",

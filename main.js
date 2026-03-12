@@ -79,7 +79,8 @@ public class KeyReleaser {
       0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A,
       0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50, 0x51, 0x52, 0x53, 0x54,
       0x55, 0x56, 0x57, 0x58, 0x59, 0x5A,
-      0xBA, 0xBF, 0xC0, 0xDB, 0xDC, 0xDD, 0xDE, 0xBC, 0xBE
+      0xBA, 0xBF, 0xC0, 0xDB, 0xDC, 0xDD, 0xDE, 0xBC, 0xBE,
+      0x7C, 0x7D, 0x7E, 0x7F, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87
     };
     for (int i = 0; i < keys.Length; i++)
       keybd_event(keys[i], 0, KEYEVENTF_KEYUP, 0);
@@ -241,7 +242,7 @@ public class MouseClicker {
   
   public static void Click() {
     mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
-    Thread.Sleep(30);
+    Thread.Sleep(20);
     
     mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
     Thread.Sleep(10);
@@ -249,7 +250,7 @@ public class MouseClicker {
   
   public static void ClickWithDelay() {
     Click();
-    Thread.Sleep(55);
+
   }
 }
 '@
@@ -367,7 +368,7 @@ public class MouseClicker {
   private static Random random = new Random();  
   public static void Click() {
     mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
-    Thread.Sleep(30);
+    Thread.Sleep(20);
     
     mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
     Thread.Sleep(10);
@@ -375,7 +376,7 @@ public class MouseClicker {
   
   public static void ClickWithDelay() {
     Click();
-    Thread.Sleep(55);
+
   }
 }
 '@
@@ -500,14 +501,15 @@ public class HybridClicker {
     0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A,
     0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50, 0x51, 0x52, 0x53, 0x54,
     0x55, 0x56, 0x57, 0x58, 0x59, 0x5A,
-    0xBA, 0xBF, 0xC0, 0xDB, 0xDC, 0xDD, 0xDE, 0xBC, 0xBE
+    0xBA, 0xBF, 0xC0, 0xDB, 0xDC, 0xDD, 0xDE, 0xBC, 0xBE,
+    0x7C, 0x7D, 0x7E, 0x7F, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87
   };
 
   public static int KeyCount { get { return keys.Length; } }
 
   public static void Click() {
     mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
-    Thread.Sleep(30);
+    Thread.Sleep(20);
     mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
     Thread.Sleep(10);
   }
@@ -525,7 +527,7 @@ public class HybridClicker {
     // Lowercase + digits + other keys (no Shift)
     for (int i = 0; i < keys.Length; i++)
       keybd_event(keys[i], 0, 0, 0);
-    Thread.Sleep(30);
+    Thread.Sleep(20);
     for (int i = 0; i < keys.Length; i++)
       keybd_event(keys[i], 0, KEYEVENTF_KEYUP, 0);
     Thread.Sleep(10);
@@ -533,7 +535,7 @@ public class HybridClicker {
     keybd_event(VK_SHIFT, 0, 0, 0);
     for (int i = 0; i < alphaKeys.Length; i++)
       keybd_event(alphaKeys[i], 0, 0, 0);
-    Thread.Sleep(30);
+    Thread.Sleep(20);
     for (int i = 0; i < alphaKeys.Length; i++)
       keybd_event(alphaKeys[i], 0, KEYEVENTF_KEYUP, 0);
     keybd_event(VK_SHIFT, 0, KEYEVENTF_KEYUP, 0);
@@ -542,7 +544,7 @@ public class HybridClicker {
 
   public static void HybridClickWithDelay() {
     HybridClick();
-    Thread.Sleep(55);
+
   }
 }
 '@
@@ -663,14 +665,15 @@ public class HybridClicker {
     0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A,
     0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50, 0x51, 0x52, 0x53, 0x54,
     0x55, 0x56, 0x57, 0x58, 0x59, 0x5A,
-    0xBA, 0xBF, 0xC0, 0xDB, 0xDC, 0xDD, 0xDE, 0xBC, 0xBE
+    0xBA, 0xBF, 0xC0, 0xDB, 0xDC, 0xDD, 0xDE, 0xBC, 0xBE,
+    0x7C, 0x7D, 0x7E, 0x7F, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87
   };
 
   public static int KeyCount { get { return keys.Length; } }
 
   public static void Click() {
     mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
-    Thread.Sleep(30);
+    Thread.Sleep(20);
     mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
     Thread.Sleep(10);
   }
@@ -688,7 +691,7 @@ public class HybridClicker {
     // Lowercase + digits + other keys (no Shift)
     for (int i = 0; i < keys.Length; i++)
       keybd_event(keys[i], 0, 0, 0);
-    Thread.Sleep(30);
+    Thread.Sleep(20);
     for (int i = 0; i < keys.Length; i++)
       keybd_event(keys[i], 0, KEYEVENTF_KEYUP, 0);
     Thread.Sleep(10);
@@ -696,7 +699,7 @@ public class HybridClicker {
     keybd_event(VK_SHIFT, 0, 0, 0);
     for (int i = 0; i < alphaKeys.Length; i++)
       keybd_event(alphaKeys[i], 0, 0, 0);
-    Thread.Sleep(30);
+    Thread.Sleep(20);
     for (int i = 0; i < alphaKeys.Length; i++)
       keybd_event(alphaKeys[i], 0, KEYEVENTF_KEYUP, 0);
     keybd_event(VK_SHIFT, 0, KEYEVENTF_KEYUP, 0);
@@ -705,7 +708,7 @@ public class HybridClicker {
 
   public static void HybridClickWithDelay() {
     HybridClick();
-    Thread.Sleep(55);
+
   }
 }
 '@

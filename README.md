@@ -39,7 +39,7 @@ Works great with [Bongo Cat](https://store.steampowered.com/app/3419430/Bongo_Ca
 #### 2. Hybrid Mode (click + keyboard)
 
 - Press "Click+Keys (10 sec)" or "Click+Keys until ESC"
-- Each cycle performs: 1 click + 93 key presses (letters, digits, arrows, F13-F24) in 2 batches
+- Each cycle performs: 1 click + 105 key presses (letters, digits, arrows, F13-F24) in 2 batches
 - ~50 ms per cycle, optimized for maximum throughput
 - Suitable for games with click frequency limits
 

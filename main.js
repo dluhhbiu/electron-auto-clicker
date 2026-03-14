@@ -25,6 +25,12 @@ app.whenReady().then(createWindow);
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
+    releaseAllKeys();
+    stopMouseMove();
+    if (clickerProcess) {
+      spawn("taskkill", ["/PID", String(clickerProcess.pid), "/T", "/F"]);
+      clickerProcess = null;
+    }
     app.quit();
   }
 });

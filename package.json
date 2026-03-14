@@ -1,6 +1,6 @@
 {
   "name": "clicker-app",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "",
   "main": "main.js",
   "scripts": {
@@ -15,6 +15,12 @@
   "build": {
     "appId": "com.clicker.app",
     "productName": "ClickerApp",
+    "files": [
+      "main.js",
+      "index.html",
+      "package.json",
+      "assets/icon.ico"
+    ],
     "win": {
       "target": "portable",
       "icon": "assets/icon.ico"

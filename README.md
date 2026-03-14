@@ -47,7 +47,7 @@ Works great with [Bongo Cat](https://store.steampowered.com/app/3419430/Bongo_Ca
 
 - Press "Start moving mouse with click"
 - Moves the cursor through specified coordinates and clicks at each point
-- Requires at least one coordinate added via "Add point by clicking"
+- Requires at least one coordinate added via "Add point by clicking" (button is disabled until coordinates are added)
 - Press `ESC` to stop
 
 ### Controls

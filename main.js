@@ -264,33 +264,18 @@ public class MouseClicker {
   [DllImport("user32.dll")]
   public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint cButtons, uint dwExtraInfo);
 
-  [DllImport("user32.dll")]
-  public static extern bool GetCursorPos(out POINT lpPoint);
-
-  [StructLayout(LayoutKind.Sequential)]
-  public struct POINT {
-    public int X;
-    public int Y;
-  }
-
   public const uint MOUSEEVENTF_LEFTDOWN = 0x02;
   public const uint MOUSEEVENTF_LEFTUP = 0x04;
-  public const uint MOUSEEVENTF_MOVE = 0x0001;
-  public const uint MOUSEEVENTF_ABSOLUTE = 0x8000;
-  
-  private static Random random = new Random();
-  
+
   public static void Click() {
     mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
     Thread.Sleep(20);
-    
     mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
     Thread.Sleep(10);
   }
-  
+
   public static void ClickWithDelay() {
     Click();
-
   }
 }
 '@
@@ -391,32 +376,18 @@ public class MouseClicker {
   [DllImport("user32.dll")]
   public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint cButtons, uint dwExtraInfo);
 
-  [DllImport("user32.dll")]
-  public static extern bool GetCursorPos(out POINT lpPoint);
-
-  [StructLayout(LayoutKind.Sequential)]
-  public struct POINT {
-    public int X;
-    public int Y;
-  }
-
   public const uint MOUSEEVENTF_LEFTDOWN = 0x02;
   public const uint MOUSEEVENTF_LEFTUP = 0x04;
-  public const uint MOUSEEVENTF_MOVE = 0x0001;
-  public const uint MOUSEEVENTF_ABSOLUTE = 0x8000;
-  
-  private static Random random = new Random();  
+
   public static void Click() {
     mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
     Thread.Sleep(20);
-    
     mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
     Thread.Sleep(10);
   }
-  
+
   public static void ClickWithDelay() {
     Click();
-
   }
 }
 '@

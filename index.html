@@ -200,7 +200,7 @@
       <button id="startHybridInfiniteBtn" data-i18n="clickKeysEsc">Click+Keys until ESC</button>
     </div>
     <div class="buttons">
-      <button id="startMovingBtn" data-i18n="startMovingMouse">Start moving mouse</button>
+      <button id="startMovingBtn" data-i18n="startMovingMouse" disabled>Start moving mouse</button>
     </div>
     <div id="status" data-i18n="pressToStart">Press to start</div>
     <div class="escape-hint" id="escapeHint" style="display: none" data-i18n="pressEscToStop">Press ESC to stop</div>
@@ -411,6 +411,7 @@
       const selectCoordBtn = document.getElementById("selectCoordBtn");
 
       function renderCoordinates() {
+        updateMovingBtnState();
         if (coordinates.length === 0) {
           coordinatesList.innerHTML = `<div class="empty-list">${t("noCoordinates")}</div>`;
           return;
@@ -507,7 +508,11 @@
         startInfiniteBtn.disabled = false;
         startHybridBtn.disabled = false;
         startHybridInfiniteBtn.disabled = false;
-        startMovingBtn.disabled = false;
+        updateMovingBtnState();
+      }
+
+      function updateMovingBtnState() {
+        startMovingBtn.disabled = coordinates.length === 0;
       }
 
       function getCoords() {

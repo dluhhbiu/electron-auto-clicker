@@ -1,6 +1,6 @@
 # Auto Clicker for Windows
 
-A simple application for automatic left mouse button clicking over a specified duration. Supports two modes: clicks only and hybrid mode (click + keyboard).
+A simple application for automatic left mouse button clicking over a specified duration. Supports three modes: clicks only, hybrid mode (click + keyboard), and mouse move with click.
 
 Works great with [Bongo Cat](https://store.steampowered.com/app/3419430/Bongo_Cat/):
 
@@ -42,6 +42,13 @@ Works great with [Bongo Cat](https://store.steampowered.com/app/3419430/Bongo_Ca
 - Each cycle performs: 1 click + 105 key presses (letters, digits, arrows, F13-F24) in 2 batches
 - ~50 ms per cycle, optimized for maximum throughput
 - Suitable for games with click frequency limits
+
+#### 3. Mouse Move with Click
+
+- Press "Start moving mouse with click"
+- Moves the cursor through specified coordinates and clicks at each point
+- Requires at least one coordinate added via "Add point by clicking"
+- Press `ESC` to stop
 
 ### Controls
 

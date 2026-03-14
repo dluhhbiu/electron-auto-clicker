@@ -7,7 +7,7 @@ Electron-based auto-clicker using PowerShell SendInput API. Two processes:
 - **Main Process** (`main.js`): Spawns PowerShell scripts, manages IPC
 - **Renderer Process** (`index.html`): UI, displays logs, sends commands
 
-**Features**: Mouse-only mode (~30ms/click) and hybrid mode (click + 105 keys in 2 batches, ~50ms/cycle, ~6400 actions/10sec).
+**Features**: Mouse-only mode (~30ms/click), hybrid mode (click + 105 keys in 2 batches, ~50ms/cycle, ~6400 actions/10sec), and mouse move with click (moves cursor through coordinates and clicks at each point).
 
 ## Validation Rules (CRITICAL)
 
@@ -102,6 +102,7 @@ const path = require("path");
 | Renderer→Main | `start-clicker-infinite`        | Start mouse-only until ESC |
 | Renderer→Main | `start-hybrid-clicker`          | Start hybrid 10s           |
 | Renderer→Main | `start-hybrid-clicker-infinite` | Start hybrid until ESC     |
+| Renderer→Main | `start-moving-mouse`            | Start mouse move with click|
 | Renderer→Main | `stop-clicker`                  | Stop active process        |
 | Main→Renderer | `log`                           | Main process logs          |
 | Main→Renderer | `ps-output`                     | PowerShell stdout          |

@@ -138,6 +138,7 @@ try {
   Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 public class MouseMover {
   [DllImport("user32.dll", SetLastError = true)]
@@ -145,6 +146,35 @@ public class MouseMover {
 
   public static void MoveTo(int x, int y) {
     SetCursorPos(x, y);
+  }
+}
+
+public class MouseClicker {
+  [DllImport("user32.dll")]
+  public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint cButtons, uint dwExtraInfo);
+
+  [DllImport("user32.dll")]
+  public static extern bool GetCursorPos(out POINT lpPoint);
+
+  [StructLayout(LayoutKind.Sequential)]
+  public struct POINT {
+    public int X;
+    public int Y;
+  }
+
+  public const uint MOUSEEVENTF_LEFTDOWN = 0x02;
+  public const uint MOUSEEVENTF_LEFTUP = 0x04;
+  public const uint MOUSEEVENTF_MOVE = 0x0001;
+  public const uint MOUSEEVENTF_ABSOLUTE = 0x8000;
+  
+  private static Random random = new Random();
+  
+  public static void Click() {
+    mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
+    Thread.Sleep(20);
+    
+    mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+    Thread.Sleep(10);
   }
 }
 '@
@@ -160,6 +190,7 @@ public class MouseMover {
       $interval = $coord.Interval
       Write-Output "Moving to: X=$x, Y=$y"
       [MouseMover]::MoveTo($x, $y)
+      [MouseClicker]::Click()
       Start-Sleep -Milliseconds $interval
       $index++
       if ($index -ge $coordinates.Length) {
@@ -207,6 +238,11 @@ public class MouseMover {
     if (moveProcess === ps) moveProcess = null;
   });
 }
+
+ipcMain.on("start-moving-mouse", (_, data) => {
+  mainWindow.webContents.send("log", "Start moving mouse requested");
+  startMouseMoveIfNeeded(data.coordinates);
+});
 
 ipcMain.on("start-clicker", (event, data) => {
   mainWindow.webContents.send("log", "IPC start-clicker received, data: " + JSON.stringify(data));

@@ -199,6 +199,9 @@
       <button id="startHybridBtn" data-i18n="clickKeys10sec">Click+Keys (10 sec)</button>
       <button id="startHybridInfiniteBtn" data-i18n="clickKeysEsc">Click+Keys until ESC</button>
     </div>
+    <div class="buttons">
+      <button id="startMovingBtn" data-i18n="startMovingMouse">Start moving mouse</button>
+    </div>
     <div id="status" data-i18n="pressToStart">Press to start</div>
     <div class="escape-hint" id="escapeHint" style="display: none" data-i18n="pressEscToStop">Press ESC to stop</div>
 
@@ -227,6 +230,7 @@
       const startInfiniteBtn = document.getElementById("startInfiniteBtn");
       const startHybridBtn = document.getElementById("startHybridBtn");
       const startHybridInfiniteBtn = document.getElementById("startHybridInfiniteBtn");
+      const startMovingBtn = document.getElementById("startMovingBtn");
       const status = document.getElementById("status");
       const escapeHint = document.getElementById("escapeHint");
       const coordInterval = document.getElementById("coordInterval");
@@ -262,6 +266,7 @@
           done: "Done! Clicking complete.",
           stopped: "Clicking stopped.",
           error: "Error: ",
+          startMovingMouse: "Start moving mouse with click",
         },
         zh: {
           title: "自动点击器",
@@ -288,6 +293,7 @@
           done: "完成！点击结束。",
           stopped: "点击已停止。",
           error: "错误: ",
+          startMovingMouse: "开始通过点击移动鼠标",
         },
         es: {
           title: "Auto Clicker",
@@ -314,6 +320,7 @@
           done: "¡Listo! Clics completados.",
           stopped: "Clics detenidos.",
           error: "Error: ",
+          startMovingMouse: "Iniciar movimiento del raton con clic",
         },
         fr: {
           title: "Auto Clicker",
@@ -340,6 +347,7 @@
           done: "Terminé ! Clics effectués.",
           stopped: "Clics arrêtés.",
           error: "Erreur : ",
+          startMovingMouse: "émarrer le déplacement de la souris avec clic",
         },
         ru: {
           title: "Авто Кликер",
@@ -366,6 +374,7 @@
           done: "Готово! Клики завершены.",
           stopped: "Клики остановлены.",
           error: "Ошибка: ",
+          startMovingMouse: "Начать перемещение мыши с кликом",
         },
       };
 
@@ -485,6 +494,7 @@
         startInfiniteBtn.disabled = true;
         startHybridBtn.disabled = true;
         startHybridInfiniteBtn.disabled = true;
+        startMovingBtn.disabled = true;
       }
 
       function enableAllButtons() {
@@ -492,6 +502,7 @@
         startInfiniteBtn.disabled = false;
         startHybridBtn.disabled = false;
         startHybridInfiniteBtn.disabled = false;
+        startMovingBtn.disabled = false;
       }
 
       function getCoords() {
@@ -524,6 +535,13 @@
         status.textContent = t("clicksKeysEsc");
         escapeHint.style.display = "block";
         ipcRenderer.send("start-hybrid-clicker-infinite", { coordinates: getCoords() });
+      });
+
+      startMovingBtn.addEventListener("click", () => {
+        disableAllButtons();
+        status.textContent = t("clicksKeysEsc");
+        escapeHint.style.display = "block";
+        ipcRenderer.send("start-moving-mouse", { coordinates: getCoords() });
       });
 
       document.addEventListener("keydown", (e) => {

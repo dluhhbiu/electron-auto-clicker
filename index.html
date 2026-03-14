@@ -267,6 +267,7 @@
           stopped: "Clicking stopped.",
           error: "Error: ",
           startMovingMouse: "Start moving mouse with click",
+          movingMouseEsc: "Moving mouse with click... (press ESC to stop)",
         },
         zh: {
           title: "自动点击器",
@@ -294,6 +295,7 @@
           stopped: "点击已停止。",
           error: "错误: ",
           startMovingMouse: "开始通过点击移动鼠标",
+          movingMouseEsc: "移动鼠标并点击中... (按 ESC 停止)",
         },
         es: {
           title: "Auto Clicker",
@@ -320,7 +322,8 @@
           done: "¡Listo! Clics completados.",
           stopped: "Clics detenidos.",
           error: "Error: ",
-          startMovingMouse: "Iniciar movimiento del raton con clic",
+          startMovingMouse: "Iniciar movimiento del ratón con clic",
+          movingMouseEsc: "Moviendo el ratón con clic... (pulsa ESC para detener)",
         },
         fr: {
           title: "Auto Clicker",
@@ -347,7 +350,8 @@
           done: "Terminé ! Clics effectués.",
           stopped: "Clics arrêtés.",
           error: "Erreur : ",
-          startMovingMouse: "émarrer le déplacement de la souris avec clic",
+          startMovingMouse: "Démarrer le déplacement de la souris avec clic",
+          movingMouseEsc: "Déplacement de la souris avec clic... (appuyez sur ESC pour arrêter)",
         },
         ru: {
           title: "Авто Кликер",
@@ -375,6 +379,7 @@
           stopped: "Клики остановлены.",
           error: "Ошибка: ",
           startMovingMouse: "Начать перемещение мыши с кликом",
+          movingMouseEsc: "Перемещение мыши с кликом... (нажмите ESC для остановки)",
         },
       };
 
@@ -539,7 +544,7 @@
 
       startMovingBtn.addEventListener("click", () => {
         disableAllButtons();
-        status.textContent = t("clicksKeysEsc");
+        status.textContent = t("movingMouseEsc");
         escapeHint.style.display = "block";
         ipcRenderer.send("start-moving-mouse", { coordinates: getCoords() });
       });

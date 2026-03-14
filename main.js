@@ -118,7 +118,7 @@ function unregisterGlobalEsc() {
   }
 }
 
-function startMouseMoveIfNeeded(coords) {
+function startMouseMoveIfNeeded(coords, withClick = false) {
   mainWindow.webContents.send(
     "log",
     "startMouseMoveIfNeeded called, coords: " + JSON.stringify(coords)
@@ -131,6 +131,24 @@ function startMouseMoveIfNeeded(coords) {
   const coordsArray = coords
     .map((c) => `[PSCustomObject]@{X=${c.x};Y=${c.y};Interval=${c.interval}}`)
     .join(",");
+
+  const clickerClass = withClick ? `
+public class MouseClicker {
+  [DllImport("user32.dll")]
+  public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint cButtons, uint dwExtraInfo);
+
+  public const uint MOUSEEVENTF_LEFTDOWN = 0x02;
+  public const uint MOUSEEVENTF_LEFTUP = 0x04;
+
+  public static void Click() {
+    mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
+    Thread.Sleep(20);
+    mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+    Thread.Sleep(10);
+  }
+}` : '';
+
+  const clickCall = withClick ? `\n      [MouseClicker]::Click()` : '';
 
   const moveScript = `
 try {
@@ -148,35 +166,7 @@ public class MouseMover {
     SetCursorPos(x, y);
   }
 }
-
-public class MouseClicker {
-  [DllImport("user32.dll")]
-  public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint cButtons, uint dwExtraInfo);
-
-  [DllImport("user32.dll")]
-  public static extern bool GetCursorPos(out POINT lpPoint);
-
-  [StructLayout(LayoutKind.Sequential)]
-  public struct POINT {
-    public int X;
-    public int Y;
-  }
-
-  public const uint MOUSEEVENTF_LEFTDOWN = 0x02;
-  public const uint MOUSEEVENTF_LEFTUP = 0x04;
-  public const uint MOUSEEVENTF_MOVE = 0x0001;
-  public const uint MOUSEEVENTF_ABSOLUTE = 0x8000;
-  
-  private static Random random = new Random();
-  
-  public static void Click() {
-    mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
-    Thread.Sleep(20);
-    
-    mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
-    Thread.Sleep(10);
-  }
-}
+${clickerClass}
 '@
 
   Write-Output "Mouse mover class loaded successfully"
@@ -189,8 +179,7 @@ public class MouseClicker {
       $y = $coord.Y
       $interval = $coord.Interval
       Write-Output "Moving to: X=$x, Y=$y"
-      [MouseMover]::MoveTo($x, $y)
-      [MouseClicker]::Click()
+      [MouseMover]::MoveTo($x, $y)${clickCall}
       Start-Sleep -Milliseconds $interval
       $index++
       if ($index -ge $coordinates.Length) {
@@ -239,9 +228,18 @@ public class MouseClicker {
   });
 }
 
-ipcMain.on("start-moving-mouse", (_, data) => {
+ipcMain.on("start-moving-mouse", (event, data) => {
   mainWindow.webContents.send("log", "Start moving mouse requested");
-  startMouseMoveIfNeeded(data.coordinates);
+  startMouseMoveIfNeeded(data.coordinates, true);
+  registerGlobalEsc();
+
+  const checkInterval = setInterval(() => {
+    if (!moveProcess) {
+      clearInterval(checkInterval);
+      unregisterGlobalEsc();
+      event.reply("clicker-complete");
+    }
+  }, 500);
 });
 
 ipcMain.on("start-clicker", (event, data) => {

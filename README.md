@@ -6,7 +6,7 @@ Works great with [Bongo Cat](https://store.steampowered.com/app/3419430/Bongo_Ca
 
 | Per minute | Per hour | Per day |
 |:---:|:---:|:---:|
-| ~44,400 | ~2.7 million | **30+ million** ❗ |
+| ~47,400 | ~2.8 million | **32+ million** ❗ |
 
 ![Clicks demo](docs/clicks.gif)
 
@@ -39,7 +39,7 @@ Works great with [Bongo Cat](https://store.steampowered.com/app/3419430/Bongo_Ca
 #### 2. Hybrid Mode (click + keyboard)
 
 - Press "Click+Keys (10 sec)" or "Click+Keys until ESC"
-- Each cycle performs: 1 click + 105 key presses (letters, digits, arrows, F13-F24) in 4 SendInput batches
+- Each cycle performs: 1 click + 125 key presses (letters, digits, arrows, F1-F24, navigation keys) in 4 SendInput batches
 - Uses pre-allocated INPUT arrays and batched SendInput API for maximum throughput
 - Suitable for games with click frequency limits
 

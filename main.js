@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, globalShortcut } = require("electron");
+const { app, BrowserWindow, ipcMain, globalShortcut, Menu } = require("electron");
 const { spawn } = require("child_process");
 const path = require("path");
 const fs = require("fs");
@@ -9,6 +9,8 @@ let clickerProcess = null;
 let moveProcess = null;
 
 function createWindow() {
+  Menu.setApplicationMenu(null);
+
   mainWindow = new BrowserWindow({
     icon: path.join(__dirname, "assets", "icon.ico"),
     webPreferences: {
@@ -123,6 +125,40 @@ function unregisterGlobalEsc() {
     _e;
   }
 }
+
+// Common C# SendInput type definitions for hybrid clicker
+const SENDINPUT_TYPES = `
+  [StructLayout(LayoutKind.Sequential)]
+  public struct MOUSEINPUT {
+    public int dx; public int dy; public uint mouseData;
+    public uint dwFlags; public uint time; public IntPtr dwExtraInfo;
+  }
+  [StructLayout(LayoutKind.Sequential)]
+  public struct KEYBDINPUT {
+    public ushort wVk; public ushort wScan; public uint dwFlags;
+    public uint time; public IntPtr dwExtraInfo;
+  }
+  [StructLayout(LayoutKind.Sequential)]
+  public struct HARDWAREINPUT {
+    public uint uMsg; public ushort wParamL; public ushort wParamH;
+  }
+  [StructLayout(LayoutKind.Explicit)]
+  public struct INPUTUNION {
+    [FieldOffset(0)] public MOUSEINPUT mi;
+    [FieldOffset(0)] public KEYBDINPUT ki;
+    [FieldOffset(0)] public HARDWAREINPUT hi;
+  }
+  [StructLayout(LayoutKind.Sequential)]
+  public struct INPUT {
+    public uint type;
+    public INPUTUNION u;
+  }
+
+  [DllImport("user32.dll", SetLastError = true)]
+  public static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
+
+  public static readonly int inputSize = Marshal.SizeOf(typeof(INPUT));
+`;
 
 function startMouseMoveIfNeeded(coords, withClick = false) {
   mainWindow.webContents.send(
@@ -486,22 +522,14 @@ ipcMain.on("start-hybrid-clicker", (event, data) => {
 
   const powerShellScript = `
 try {
-  Write-Output "Starting hybrid clicker (click + keyboard) for 10 seconds..."
   Add-Type -TypeDefinition @'
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
 
 public class HybridClicker {
-  [DllImport("user32.dll")]
-  public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint cButtons, uint dwExtraInfo);
-
-  [DllImport("user32.dll")]
-  public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, uint dwExtraInfo);
-
-  public const uint MOUSEEVENTF_LEFTDOWN = 0x02;
-  public const uint MOUSEEVENTF_LEFTUP = 0x04;
-  public const uint KEYEVENTF_KEYUP = 0x0002;
+${SENDINPUT_TYPES}
 
   private static readonly byte[] keys = new byte[] {
     0x25, 0x26, 0x27, 0x28,
@@ -516,79 +544,79 @@ public class HybridClicker {
     0x7C, 0x7D, 0x7E, 0x7F, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87
   };
 
-  public static int KeyCount { get { return keys.Length; } }
-
-  public static void Click() {
-    mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
-    Thread.Sleep(20);
-    mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
-    Thread.Sleep(10);
-  }
-
-  public const byte VK_SHIFT = 0x10;
-
   private static readonly byte[] alphaKeys = new byte[] {
     0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A,
     0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50, 0x51, 0x52, 0x53, 0x54,
     0x55, 0x56, 0x57, 0x58, 0x59, 0x5A
   };
 
-  public static void HybridClick() {
-    // Batch 1: mouse + keys (no Shift)
-    mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
-    for (int i = 0; i < keys.Length; i++)
-      keybd_event(keys[i], 0, 0, 0);
-    Thread.Sleep(15);
-    mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
-    for (int i = 0; i < keys.Length; i++)
-      keybd_event(keys[i], 0, KEYEVENTF_KEYUP, 0);
-    Thread.Sleep(10);
+  private static readonly INPUT[] batch1Press;
+  private static readonly INPUT[] batch1Release;
+  private static readonly INPUT[] batch2Press;
+  private static readonly INPUT[] batch2Release;
+  private static readonly int actionsPerCycle;
 
-    // Batch 2: Shift + alpha keys
-    keybd_event(VK_SHIFT, 0, 0, 0);
-    for (int i = 0; i < alphaKeys.Length; i++)
-      keybd_event(alphaKeys[i], 0, 0, 0);
-    Thread.Sleep(15);
-    for (int i = 0; i < alphaKeys.Length; i++)
-      keybd_event(alphaKeys[i], 0, KEYEVENTF_KEYUP, 0);
-    keybd_event(VK_SHIFT, 0, KEYEVENTF_KEYUP, 0);
-    Thread.Sleep(10);
+  static HybridClicker() {
+    actionsPerCycle = 1 + keys.Length + 1 + alphaKeys.Length;
+
+    batch1Press = new INPUT[1 + keys.Length];
+    batch1Press[0].type = 0;
+    batch1Press[0].u.mi.dwFlags = 0x0002;
+    for (int i = 0; i < keys.Length; i++) {
+      batch1Press[1 + i].type = 1;
+      batch1Press[1 + i].u.ki.wVk = keys[i];
+    }
+
+    batch1Release = new INPUT[1 + keys.Length];
+    batch1Release[0].type = 0;
+    batch1Release[0].u.mi.dwFlags = 0x0004;
+    for (int i = 0; i < keys.Length; i++) {
+      batch1Release[1 + i].type = 1;
+      batch1Release[1 + i].u.ki.wVk = keys[i];
+      batch1Release[1 + i].u.ki.dwFlags = 0x0002;
+    }
+
+    batch2Press = new INPUT[1 + alphaKeys.Length];
+    batch2Press[0].type = 1;
+    batch2Press[0].u.ki.wVk = 0x10;
+    for (int i = 0; i < alphaKeys.Length; i++) {
+      batch2Press[1 + i].type = 1;
+      batch2Press[1 + i].u.ki.wVk = alphaKeys[i];
+    }
+
+    batch2Release = new INPUT[alphaKeys.Length + 1];
+    for (int i = 0; i < alphaKeys.Length; i++) {
+      batch2Release[i].type = 1;
+      batch2Release[i].u.ki.wVk = alphaKeys[i];
+      batch2Release[i].u.ki.dwFlags = 0x0002;
+    }
+    batch2Release[alphaKeys.Length].type = 1;
+    batch2Release[alphaKeys.Length].u.ki.wVk = 0x10;
+    batch2Release[alphaKeys.Length].u.ki.dwFlags = 0x0002;
   }
 
-  public static void HybridClickWithDelay() {
-    HybridClick();
-
+  public static string RunTimed(int seconds) {
+    Stopwatch sw = Stopwatch.StartNew();
+    long cycles = 0;
+    long targetMs = seconds * 1000L;
+    while (sw.ElapsedMilliseconds < targetMs) {
+      SendInput((uint)batch1Press.Length, batch1Press, inputSize);
+      Thread.Sleep(15);
+      SendInput((uint)batch1Release.Length, batch1Release, inputSize);
+      Thread.Sleep(10);
+      SendInput((uint)batch2Press.Length, batch2Press, inputSize);
+      Thread.Sleep(15);
+      SendInput((uint)batch2Release.Length, batch2Release, inputSize);
+      Thread.Sleep(10);
+      cycles++;
+    }
+    sw.Stop();
+    long totalActions = cycles * actionsPerCycle;
+    return "Done. Cycles: " + cycles + ", Total actions: " + totalActions + " in " + sw.ElapsedMilliseconds + "ms";
   }
 }
 '@
-  Write-Output "Hybrid clicker class loaded successfully"
-  $startTime = Get-Date
-  $endTime = $startTime.AddSeconds(10)
-  Write-Output "Start time: $startTime"
-  Write-Output "End time: $endTime"
-  $count = 0
-  $clickCount = 0
-  $keyCount = 0
-  while ($true) {
-    $currentTime = Get-Date
-    if ($currentTime -ge $endTime) {
-      Write-Output "Time limit reached"
-      break
-    }
-    try {
-      [HybridClicker]::HybridClickWithDelay()
-      $count += 94
-      $clickCount++
-      $keyCount += 93
-      if ($count % 10 -eq 0) {
-        Write-Output "Mouse clicks: $clickCount, Key presses: $keyCount at $currentTime"
-      }
-    } catch {
-      Write-Output "Click error: $_"
-      Write-Output "Stack: $($_.ScriptStackTrace)"
-    }
-  }
-  Write-Output "Done. Total actions: $count (clicks: $clickCount, keys: $keyCount)"
+  Write-Output ([HybridClicker]::RunTimed(10))
 } catch {
   Write-Output "Fatal error: $_"
   Write-Output "Stack: $($_.ScriptStackTrace)"
@@ -652,22 +680,13 @@ ipcMain.on("start-hybrid-clicker-infinite", (event, data) => {
 
   const powerShellScript = `
 try {
-  Write-Output "Starting infinite hybrid clicker (ESC to stop)..."
   Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
 
 public class HybridClicker {
-  [DllImport("user32.dll")]
-  public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint cButtons, uint dwExtraInfo);
-
-  [DllImport("user32.dll")]
-  public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, uint dwExtraInfo);
-
-  public const uint MOUSEEVENTF_LEFTDOWN = 0x02;
-  public const uint MOUSEEVENTF_LEFTUP = 0x04;
-  public const uint KEYEVENTF_KEYUP = 0x0002;
+${SENDINPUT_TYPES}
 
   private static readonly byte[] keys = new byte[] {
     0x25, 0x26, 0x27, 0x28,
@@ -682,69 +701,68 @@ public class HybridClicker {
     0x7C, 0x7D, 0x7E, 0x7F, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87
   };
 
-  public static int KeyCount { get { return keys.Length; } }
-
-  public static void Click() {
-    mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
-    Thread.Sleep(20);
-    mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
-    Thread.Sleep(10);
-  }
-
-  public const byte VK_SHIFT = 0x10;
-
   private static readonly byte[] alphaKeys = new byte[] {
     0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A,
     0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50, 0x51, 0x52, 0x53, 0x54,
     0x55, 0x56, 0x57, 0x58, 0x59, 0x5A
   };
 
-  public static void HybridClick() {
-    // Batch 1: mouse + keys (no Shift)
-    mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
-    for (int i = 0; i < keys.Length; i++)
-      keybd_event(keys[i], 0, 0, 0);
-    Thread.Sleep(15);
-    mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
-    for (int i = 0; i < keys.Length; i++)
-      keybd_event(keys[i], 0, KEYEVENTF_KEYUP, 0);
-    Thread.Sleep(10);
+  private static readonly INPUT[] batch1Press;
+  private static readonly INPUT[] batch1Release;
+  private static readonly INPUT[] batch2Press;
+  private static readonly INPUT[] batch2Release;
 
-    // Batch 2: Shift + alpha keys
-    keybd_event(VK_SHIFT, 0, 0, 0);
-    for (int i = 0; i < alphaKeys.Length; i++)
-      keybd_event(alphaKeys[i], 0, 0, 0);
-    Thread.Sleep(15);
-    for (int i = 0; i < alphaKeys.Length; i++)
-      keybd_event(alphaKeys[i], 0, KEYEVENTF_KEYUP, 0);
-    keybd_event(VK_SHIFT, 0, KEYEVENTF_KEYUP, 0);
-    Thread.Sleep(10);
+  static HybridClicker() {
+    batch1Press = new INPUT[1 + keys.Length];
+    batch1Press[0].type = 0;
+    batch1Press[0].u.mi.dwFlags = 0x0002;
+    for (int i = 0; i < keys.Length; i++) {
+      batch1Press[1 + i].type = 1;
+      batch1Press[1 + i].u.ki.wVk = keys[i];
+    }
+
+    batch1Release = new INPUT[1 + keys.Length];
+    batch1Release[0].type = 0;
+    batch1Release[0].u.mi.dwFlags = 0x0004;
+    for (int i = 0; i < keys.Length; i++) {
+      batch1Release[1 + i].type = 1;
+      batch1Release[1 + i].u.ki.wVk = keys[i];
+      batch1Release[1 + i].u.ki.dwFlags = 0x0002;
+    }
+
+    batch2Press = new INPUT[1 + alphaKeys.Length];
+    batch2Press[0].type = 1;
+    batch2Press[0].u.ki.wVk = 0x10;
+    for (int i = 0; i < alphaKeys.Length; i++) {
+      batch2Press[1 + i].type = 1;
+      batch2Press[1 + i].u.ki.wVk = alphaKeys[i];
+    }
+
+    batch2Release = new INPUT[alphaKeys.Length + 1];
+    for (int i = 0; i < alphaKeys.Length; i++) {
+      batch2Release[i].type = 1;
+      batch2Release[i].u.ki.wVk = alphaKeys[i];
+      batch2Release[i].u.ki.dwFlags = 0x0002;
+    }
+    batch2Release[alphaKeys.Length].type = 1;
+    batch2Release[alphaKeys.Length].u.ki.wVk = 0x10;
+    batch2Release[alphaKeys.Length].u.ki.dwFlags = 0x0002;
   }
 
-  public static void HybridClickWithDelay() {
-    HybridClick();
-
+  public static void Smash() {
+    SendInput((uint)batch1Press.Length, batch1Press, inputSize);
+    Thread.Sleep(15);
+    SendInput((uint)batch1Release.Length, batch1Release, inputSize);
+    Thread.Sleep(10);
+    SendInput((uint)batch2Press.Length, batch2Press, inputSize);
+    Thread.Sleep(15);
+    SendInput((uint)batch2Release.Length, batch2Release, inputSize);
+    Thread.Sleep(10);
   }
 }
 '@
-
-  Write-Output "Hybrid clicker class loaded successfully"
-  $count = 0
-  $clickCount = 0
-  $keyCount = 0
   while ($true) {
-    try {
-      [HybridClicker]::HybridClickWithDelay()
-      $count += 94
-      $clickCount++
-      $keyCount += 93
-      if ($count % 10 -eq 0) {
-        Write-Output "Mouse clicks: $clickCount, Key presses: $keyCount"
-      }
-    } catch {
-      Write-Output "Click error: $_"
-      Write-Output "Stack: $($_.ScriptStackTrace)"
-    }
+    [HybridClicker]::Smash()
   }
 } catch {
   Write-Output "Fatal error: $_"

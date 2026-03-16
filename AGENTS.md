@@ -7,7 +7,7 @@ Electron-based auto-clicker using PowerShell SendInput API. Two processes:
 - **Main Process** (`main.js`): Spawns PowerShell scripts, manages IPC
 - **Renderer Process** (`index.html`): UI, displays logs, sends commands
 
-**Features**: Mouse-only mode (~30ms/click), hybrid mode (click + 105 keys in 2 batches, ~50ms/cycle, ~6400 actions/10sec), and mouse move with click (moves cursor through coordinates and clicks at each point, button disabled until coordinates are added). All keys and processes are released on app close.
+**Features**: Mouse-only mode (~30ms/click), hybrid mode (click + 105 keys in 4 SendInput batches with pre-allocated INPUT arrays, ~7200 actions/10sec), and mouse move with click (moves cursor through coordinates and clicks at each point, button disabled until coordinates are added). Menu bar removed. All keys and processes are released on app close.
 
 ## Validation Rules (CRITICAL)
 
@@ -166,17 +166,15 @@ Embed as template strings, use heredoc for multi-line C#, include `Write-Output`
 **Hybrid clicker pattern** (C# inside PowerShell):
 
 ```csharp
-[DllImport("user32.dll")]
-public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, uint dwExtraInfo);
-public const uint KEYEVENTF_KEYUP = 0x0002;
-public const byte VK_UP = 0x26;
-public const byte VK_DOWN = 0x28;
-public const byte VK_LEFT = 0x25;
-public const byte VK_RIGHT = 0x27;
+[DllImport("user32.dll", SetLastError = true)]
+public static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
+// SENDINPUT_TYPES constant in main.js defines INPUT/KEYBDINPUT/MOUSEINPUT structs
+// Pre-allocated arrays: batch1Press, batch1Release, batch2Press, batch2Release
 
-// Batch 1: mouse + all keys (no Shift) - down, Sleep(15), up, Sleep(10)
-// Batch 2: Shift + alpha keys - down, Sleep(15), up, Sleep(10)
-// Total: ~50ms per cycle, ~6400 actions per 10 seconds
+// Uses SendInput API with pre-allocated INPUT[] arrays (4 small batches):
+// batch1Press (mouse+keys), batch1Release, batch2Press (shift+alpha), batch2Release
+// Each batch sent via single SendInput call, Sleep(15)/Sleep(10) between batches
+// Total: ~7200 actions per 10 seconds
 ```
 
 ---

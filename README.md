@@ -4,9 +4,9 @@ A simple application for automatic left mouse button clicking over a specified d
 
 Works great with [Bongo Cat](https://store.steampowered.com/app/3419430/Bongo_Cat/):
 
-| Per minute | Per hour | Per day |
-|:---:|:---:|:---:|
-| ~47,400 | ~2.8 million | **32+ million** ❗ |
+| Per minute |   Per hour   |      Per day       |
+| :--------: | :----------: | :----------------: |
+|  ~47,400   | ~2.8 million | **32+ million** ❗ |
 
 ![Clicks demo](docs/clicks.gif)
 

@@ -16,7 +16,7 @@ Before declaring task complete, ALWAYS run:
 ```bash
 node --check main.js        # Check syntax
 npm run lint                # Must pass with no errors
-npm run format -- --check   # Optional format check
+npm run format:check        # Optional format check (read-only)
 ```
 
 Never mark complete if lint/syntax errors exist. Fix first, then report success. Exception: Non-code tasks (docs, git ops).
@@ -33,10 +33,15 @@ npm run build-win           # Full build: Windows .exe + runtime (работае
 npm run rebuild-asar        # Quick rebuild: только перепаковка кода в app.asar
 npm run lint                # Check for errors
 npm run lint:fix            # Auto-fix errors
-npm run format              # Format all files
+npm run format              # Format all files (writes)
+npm run format:check        # Check formatting (read-only, used by CI)
+npm test                    # Run unit tests (node --test)
 ```
 
-**Testing**: Not configured. Add Jest + electron-mock for main process, Playwright for renderer.
+**Testing**: Pure renderer logic lives in `lib/coordinates.js` and is covered by
+`test/coordinates.test.js` via the built-in `node --test` runner (no extra deps).
+Main-process and full renderer (Electron) flows are still untested — consider
+electron-mock / Playwright if expanding coverage.
 
 ---
 
@@ -53,7 +58,7 @@ npm run build-win           # Создаёт dist/win-unpacked/ с ClickerApp.ex
 ### Быстрая пересборка (после изменений в коде)
 
 ```bash
-npm run rebuild-asar        # Перепаковывает main.js, index.html и т.д. в app.asar
+npm run rebuild-asar        # Перепаковывает main.js, index.html, lib/ и т.д. в app.asar
 ```
 
 Используй это после правок кода — не нужна полная пересборка, только обновление `dist/win-unpacked/resources/app.asar`.
@@ -96,20 +101,20 @@ const path = require("path");
 
 **Available channels**:
 
-| Direction     | Channel                         | Purpose                    |
-| ------------- | ------------------------------- | -------------------------- |
-| Renderer→Main | `start-clicker`                 | Start mouse-only 10s       |
-| Renderer→Main | `start-clicker-infinite`        | Start mouse-only until ESC |
-| Renderer→Main | `start-hybrid-clicker`          | Start hybrid 10s           |
-| Renderer→Main | `start-hybrid-clicker-infinite` | Start hybrid until ESC     |
-| Renderer→Main | `start-moving-mouse`            | Start mouse move with click|
-| Renderer→Main | `stop-clicker`                  | Stop active process        |
-| Main→Renderer | `log`                           | Main process logs          |
-| Main→Renderer | `ps-output`                     | PowerShell stdout          |
-| Main→Renderer | `ps-error`                      | PowerShell stderr          |
-| Main→Renderer | `clicker-complete`              | Success notification       |
-| Main→Renderer | `clicker-error`                 | Error with message         |
-| Main→Renderer | `clicker-stopped`               | Stop notification          |
+| Direction     | Channel                         | Purpose                     |
+| ------------- | ------------------------------- | --------------------------- |
+| Renderer→Main | `start-clicker`                 | Start mouse-only 10s        |
+| Renderer→Main | `start-clicker-infinite`        | Start mouse-only until ESC  |
+| Renderer→Main | `start-hybrid-clicker`          | Start hybrid 10s            |
+| Renderer→Main | `start-hybrid-clicker-infinite` | Start hybrid until ESC      |
+| Renderer→Main | `start-moving-mouse`            | Start mouse move with click |
+| Renderer→Main | `stop-clicker`                  | Stop active process         |
+| Main→Renderer | `log`                           | Main process logs           |
+| Main→Renderer | `ps-output`                     | PowerShell stdout           |
+| Main→Renderer | `ps-error`                      | PowerShell stderr           |
+| Main→Renderer | `clicker-complete`              | Success notification        |
+| Main→Renderer | `clicker-error`                 | Error with message          |
+| Main→Renderer | `clicker-stopped`               | Stop notification           |
 
 ---
 
@@ -119,7 +124,7 @@ const path = require("path");
 
 - Handle OS ops via `child_process.spawn()`
 - Manage PowerShell scripts in temp directory
-- Send logs via `mainWindow.webContents.send()`
+- Send logs/messages to the renderer via the `sendToRenderer(channel, ...args)` helper (guards against a destroyed window); avoid calling `mainWindow.webContents.send()` directly
 
 **Renderer Process** (inline script in `index.html`):
 
@@ -138,10 +143,12 @@ fs.writeFileSync(scriptPath, code);
 const ps = spawn("powershell", ["-ExecutionPolicy", "Bypass", "-File", scriptPath], {
   windowsHide: true,
 });
-ps.on("close", (code) => {
+ps.on("close", () => {
   try {
     fs.unlinkSync(scriptPath);
-  } catch (e) {}
+  } catch {
+    // temp file already gone — no-empty requires a comment, не пустой блок
+  }
 });
 ```
 

@@ -428,9 +428,18 @@ function runClickerScript({ name, script, event, reportExitCode }) {
     }
   });
 
+  // Spawn failures emit "error" without a matching "close", so mirror the
+  // cleanup here; when both fire, every step below is idempotent.
   ps.on("error", (err) => {
     sendToRenderer("log", `${name} error: ${err}`);
     if (clickerProcess === ps) clickerProcess = null;
+    stopMouseMove();
+    unregisterGlobalEsc();
+    try {
+      fs.unlinkSync(scriptPath);
+    } catch {
+      // temp file already gone — nothing to clean up
+    }
     event.reply("clicker-error", err.message);
   });
 }
@@ -558,7 +567,13 @@ ${clickerClass}
     sendToRenderer("ps-error", data.toString());
   });
 
-  ps.on("close", () => {
+  // Shared by "close" and "error": a spawn failure emits "error" without a
+  // matching "close", and both can fire for runtime errors — settle only once
+  // so onClose (completion reply) is never skipped or duplicated.
+  let settled = false;
+  const settle = () => {
+    if (settled) return;
+    settled = true;
     if (moveProcess === ps) moveProcess = null;
     try {
       fs.unlinkSync(scriptPath);
@@ -566,11 +581,13 @@ ${clickerClass}
       // temp file already gone — nothing to clean up
     }
     if (onClose) onClose();
-  });
+  };
+
+  ps.on("close", settle);
 
   ps.on("error", (err) => {
     sendToRenderer("log", "Mouse move error: " + err);
-    if (moveProcess === ps) moveProcess = null;
+    settle();
   });
 
   return true;
@@ -737,6 +754,12 @@ while ($true) {
   });
 
   ps.on("error", (err) => {
+    // spawn failures emit "error" without "close" — clean the temp file here too
+    try {
+      fs.unlinkSync(scriptPath);
+    } catch {
+      // temp file already gone — nothing to clean up
+    }
     event.reply("mouse-click-error", err.message);
   });
 });

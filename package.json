@@ -8,10 +8,10 @@
     "start": "electron .",
     "build-win": "electron-builder --win --dir",
     "rebuild-asar": "mkdir -p _tmp && cp -r main.js index.html package.json lib _tmp/ && npx asar pack _tmp dist/win-unpacked/resources/app.asar && rm -rf _tmp && echo 'app.asar rebuilt'",
-    "lint": "eslint *.js",
-    "lint:fix": "eslint *.js --fix",
-    "format": "prettier --write *.js *.html *.md",
-    "format:check": "prettier --check *.js *.html *.md"
+    "lint": "eslint *.js lib test",
+    "lint:fix": "eslint *.js lib test --fix",
+    "format": "prettier --write *.js *.html *.md lib test",
+    "format:check": "prettier --check *.js *.html *.md lib test"
   },
   "build": {
     "appId": "com.clicker.app",

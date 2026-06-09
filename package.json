@@ -4,10 +4,10 @@
   "description": "",
   "main": "main.js",
   "scripts": {
-    "test": "node --test \"test/**/*.test.js\"",
+    "test": "node --test",
     "start": "electron .",
     "build-win": "electron-builder --win --dir",
-    "rebuild-asar": "mkdir -p _tmp && cp -r main.js index.html package.json lib _tmp/ && npx asar pack _tmp dist/win-unpacked/resources/app.asar && rm -rf _tmp && echo 'app.asar rebuilt'",
+    "rebuild-asar": "rm -rf _tmp && mkdir _tmp _tmp/assets && cp -r main.js index.html package.json lib _tmp/ && cp assets/icon.ico _tmp/assets/ && npx asar pack _tmp dist/win-unpacked/resources/app.asar && rm -rf _tmp && echo 'app.asar rebuilt'",
     "lint": "eslint *.js lib test",
     "lint:fix": "eslint *.js lib test --fix",
     "format": "prettier --write *.js *.html *.md lib test",

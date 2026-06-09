@@ -38,10 +38,11 @@ npm run format:check        # Check formatting (read-only, used by CI)
 npm test                    # Run unit tests (node --test)
 ```
 
-**Testing**: Pure renderer logic lives in `lib/coordinates.js` and is covered by
-`test/coordinates.test.js` via the built-in `node --test` runner (no extra deps).
-Main-process and full renderer (Electron) flows are still untested — consider
-electron-mock / Playwright if expanding coverage.
+**Testing**: Pure coordinate logic (renderer UI helpers + main-process IPC
+validation via `sanitizeCoordinates`) lives in `lib/coordinates.js` and is
+covered by `test/coordinates.test.js` via the built-in `node --test` runner (no
+extra deps; CI runs it too). Electron-specific main/renderer flows are still
+untested — consider electron-mock / Playwright if expanding coverage.
 
 ---
 

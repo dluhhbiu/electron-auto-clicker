@@ -3,10 +3,12 @@ const { spawn } = require("child_process");
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
+const { sanitizeCoordinates } = require("./lib/coordinates.js");
 
 let mainWindow;
 let clickerProcess = null;
 let moveProcess = null;
+let captureProcess = null;
 
 // Safe send to the renderer: the window may already be destroyed when a
 // PowerShell process exits during shutdown, so guard every send.
@@ -57,6 +59,7 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     releaseAllKeys();
     stopMouseMove();
+    stopCaptureProcess();
     if (clickerProcess) {
       spawn("taskkill", ["/PID", String(clickerProcess.pid), "/T", "/F"]);
       clickerProcess = null;
@@ -71,14 +74,25 @@ app.on("activate", () => {
   }
 });
 
+// Date.now() alone can collide when two scripts are requested within the same
+// millisecond (e.g. rapid capture requests), so add a monotonic counter.
+let scriptSeq = 0;
 function uniqueScriptPath(name) {
-  return path.join(os.tmpdir(), `${name}-${Date.now()}.ps1`);
+  scriptSeq++;
+  return path.join(os.tmpdir(), `${name}-${Date.now()}-${scriptSeq}.ps1`);
 }
 
 function stopMouseMove() {
   if (moveProcess) {
     spawn("taskkill", ["/PID", String(moveProcess.pid), "/T", "/F"]);
     moveProcess = null;
+  }
+}
+
+function stopCaptureProcess() {
+  if (captureProcess) {
+    spawn("taskkill", ["/PID", String(captureProcess.pid), "/T", "/F"]);
+    captureProcess = null;
   }
 }
 
@@ -408,6 +422,16 @@ function runClickerScript({ name, script, event, reportExitCode }) {
     sendToRenderer("ps-error", data.toString());
   });
 
+  // A failed spawn emits "error" and then "close" as well, so both handlers can
+  // fire for one process. The cleanup steps are idempotent; replyOnce makes
+  // sure the renderer sees exactly one final clicker-* reply.
+  let replied = false;
+  const replyOnce = (channel, ...args) => {
+    if (replied) return;
+    replied = true;
+    event.reply(channel, ...args);
+  };
+
   ps.on("close", (code) => {
     sendToRenderer("log", `${name} closed with code: ${code}`);
     const wasKilled = clickerProcess !== ps;
@@ -420,16 +444,14 @@ function runClickerScript({ name, script, event, reportExitCode }) {
       // temp file already gone — nothing to clean up
     }
     if (wasKilled) {
-      event.reply("clicker-stopped");
+      replyOnce("clicker-stopped");
     } else if (!reportExitCode || code === 0) {
-      event.reply("clicker-complete");
+      replyOnce("clicker-complete");
     } else {
-      event.reply("clicker-error", `Exit code: ${code}`);
+      replyOnce("clicker-error", `Exit code: ${code}`);
     }
   });
 
-  // Spawn failures emit "error" without a matching "close", so mirror the
-  // cleanup here; when both fire, every step below is idempotent.
   ps.on("error", (err) => {
     sendToRenderer("log", `${name} error: ${err}`);
     if (clickerProcess === ps) clickerProcess = null;
@@ -440,7 +462,7 @@ function runClickerScript({ name, script, event, reportExitCode }) {
     } catch {
       // temp file already gone — nothing to clean up
     }
-    event.reply("clicker-error", err.message);
+    replyOnce("clicker-error", err.message);
   });
 }
 
@@ -460,23 +482,12 @@ function isClickerBusy(channel) {
 // mode to signal completion without polling.
 function startMouseMoveIfNeeded(coords, withClick = false, onClose = null) {
   sendToRenderer("log", "startMouseMoveIfNeeded called, coords: " + JSON.stringify(coords));
-  if (!coords || coords.length === 0) {
-    sendToRenderer("log", "No coordinates, skipping mouse move");
-    return false;
-  }
 
-  // Validate IPC data: coerce to integers and drop anything non-numeric so
-  // nothing but plain numbers is ever interpolated into the PowerShell script.
-  const sanitized = coords
-    .map((c) => ({
-      x: Math.trunc(Number(c.x)),
-      y: Math.trunc(Number(c.y)),
-      interval: Math.trunc(Number(c.interval)),
-    }))
-    .filter((c) => Number.isFinite(c.x) && Number.isFinite(c.y) && Number.isFinite(c.interval));
-
+  // Validate IPC data (including a non-array payload) so nothing but plain
+  // in-range integers is ever interpolated into the PowerShell script.
+  const sanitized = sanitizeCoordinates(coords);
   if (sanitized.length === 0) {
-    sendToRenderer("log", "No valid coordinates after validation, skipping mouse move");
+    sendToRenderer("log", "No valid coordinates, skipping mouse move");
     return false;
   }
 
@@ -596,7 +607,6 @@ ${clickerClass}
 ipcMain.on("start-moving-mouse", (event, data) => {
   if (isClickerBusy("start-moving-mouse")) return;
   sendToRenderer("log", "Start moving mouse requested");
-  registerGlobalEsc();
 
   const finish = () => {
     unregisterGlobalEsc();
@@ -605,8 +615,14 @@ ipcMain.on("start-moving-mouse", (event, data) => {
 
   // The mover runs an infinite loop, so completion only happens when the
   // process is killed (ESC / stop). Signal via the process close event.
-  const started = startMouseMoveIfNeeded(data.coordinates, true, finish);
-  if (!started) finish();
+  // Register the global shortcut only after a successful start: if the spawn
+  // throws, Escape must not stay grabbed with nothing running.
+  const started = startMouseMoveIfNeeded(data && data.coordinates, true, finish);
+  if (!started) {
+    event.reply("clicker-complete");
+    return;
+  }
+  registerGlobalEsc();
 });
 
 ipcMain.on("start-clicker", (event, data) => {
@@ -672,6 +688,10 @@ ipcMain.on("start-hybrid-clicker-infinite", (event, data) => {
 });
 
 ipcMain.on("capture-mouse-click", (event) => {
+  // Only one capture poller at a time: a new request (e.g. another "Change
+  // position" click) supersedes the previous one, which would otherwise keep
+  // polling until the next physical click and reply a second time.
+  stopCaptureProcess();
   sendToRenderer("log", "Waiting for mouse click to capture coordinates...");
 
   const script = `
@@ -723,6 +743,7 @@ while ($true) {
   const ps = spawn("powershell.exe", ["-ExecutionPolicy", "Bypass", "-File", scriptPath], {
     windowsHide: true,
   });
+  captureProcess = ps;
 
   ps.stdout.on("data", (data) => {
     output += data.toString();
@@ -746,6 +767,7 @@ while ($true) {
   });
 
   ps.on("close", () => {
+    if (captureProcess === ps) captureProcess = null;
     try {
       fs.unlinkSync(scriptPath);
     } catch {
@@ -754,7 +776,8 @@ while ($true) {
   });
 
   ps.on("error", (err) => {
-    // spawn failures emit "error" without "close" — clean the temp file here too
+    // a failed spawn emits "error" before "close" — clean up here too (idempotent)
+    if (captureProcess === ps) captureProcess = null;
     try {
       fs.unlinkSync(scriptPath);
     } catch {

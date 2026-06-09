@@ -75,3 +75,62 @@ test("getCoords returns the array or null when empty", () => {
   const coords = [{ x: 1, y: 1, interval: 1000 }];
   assert.equal(coord.getCoords(coords), coords);
 });
+
+// ── characterization tests: intentionally preserved legacy behavior ──
+
+test("parseInterval truncates float strings like the old parseInt", () => {
+  assert.equal(coord.parseInterval("10.5"), 10);
+});
+
+test("addCoordinate preserves legacy quirks for exotic numeric strings", () => {
+  // `parseInt("1e3") || 5000` → 1: below MIN_INTERVAL but truthy, kept as-is
+  assert.equal(coord.addCoordinate([], { x: 1, y: 2, interval: "1e3" })[0].interval, 1);
+  // negative values are truthy too — min="10" on the input does not block typing
+  assert.equal(coord.addCoordinate([], { x: 1, y: 2, interval: "-5" })[0].interval, -5);
+});
+
+// ── sanitizeCoordinates: main-process IPC validation ──
+
+test("sanitizeCoordinates returns [] for non-array payloads", () => {
+  assert.deepEqual(coord.sanitizeCoordinates(null), []);
+  assert.deepEqual(coord.sanitizeCoordinates(undefined), []);
+  assert.deepEqual(coord.sanitizeCoordinates("abc"), []);
+  assert.deepEqual(coord.sanitizeCoordinates({ length: 1 }), []);
+  assert.deepEqual(coord.sanitizeCoordinates(5), []);
+});
+
+test("sanitizeCoordinates truncates values to plain integers", () => {
+  assert.deepEqual(coord.sanitizeCoordinates([{ x: "10.7", y: 20.2, interval: "5000" }]), [
+    { x: 10, y: 20, interval: 5000 },
+  ]);
+});
+
+test("sanitizeCoordinates drops non-numeric and malformed entries", () => {
+  const input = [
+    { x: "abc", y: 1, interval: 100 },
+    { x: 1, y: {}, interval: 100 },
+    { x: 1, y: 1 },
+    null,
+    "junk",
+    { x: 5, y: 6, interval: 700 },
+  ];
+  assert.deepEqual(coord.sanitizeCoordinates(input), [{ x: 5, y: 6, interval: 700 }]);
+});
+
+test("sanitizeCoordinates clamps coordinates to the int32 range", () => {
+  const [c] = coord.sanitizeCoordinates([{ x: 1e21, y: -1e21, interval: 100 }]);
+  assert.deepEqual(c, { x: 2147483647, y: -2147483648, interval: 100 });
+});
+
+test("sanitizeCoordinates clamps the interval to [MIN_INTERVAL, int32 max]", () => {
+  // Start-Sleep -Milliseconds binds to Int32 and rejects negatives: out-of-range
+  // values would otherwise error on every loop iteration with no sleep at all.
+  // The floor is MIN_INTERVAL (not 0) so a stray sub-minimum value (the UI
+  // minimum is 10) can never turn the mover into a zero-sleep busy loop.
+  const [c] = coord.sanitizeCoordinates([{ x: 1, y: 2, interval: 1e21 }]);
+  assert.equal(c.interval, 2147483647);
+  const [n] = coord.sanitizeCoordinates([{ x: 1, y: 2, interval: -5 }]);
+  assert.equal(n.interval, coord.MIN_INTERVAL);
+  const [z] = coord.sanitizeCoordinates([{ x: 1, y: 2, interval: 0 }]);
+  assert.equal(z.interval, coord.MIN_INTERVAL);
+});

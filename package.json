@@ -1,16 +1,17 @@
 {
   "name": "clicker-app",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test",
     "start": "electron .",
-    "build-win": "electron-builder --win",
-    "rebuild-asar": "mkdir -p _tmp && cp main.js index.html package.json .eslintrc.js _tmp/ && npx asar pack _tmp dist/win-unpacked/resources/app.asar && rm -rf _tmp && echo 'app.asar rebuilt'",
-    "lint": "eslint *.js",
-    "lint:fix": "eslint *.js --fix",
-    "format": "prettier --write *.js *.html *.md"
+    "build-win": "electron-builder --win --dir",
+    "rebuild-asar": "rm -rf _tmp && mkdir _tmp _tmp/assets && cp -r main.js index.html package.json lib _tmp/ && cp assets/icon.ico _tmp/assets/ && npx asar pack _tmp dist/win-unpacked/resources/app.asar && rm -rf _tmp && echo 'app.asar rebuilt'",
+    "lint": "eslint *.js lib test",
+    "lint:fix": "eslint *.js lib test --fix",
+    "format": "prettier --write *.js *.html *.md lib test",
+    "format:check": "prettier --check *.js *.html *.md lib test"
   },
   "build": {
     "appId": "com.clicker.app",
@@ -19,6 +20,7 @@
       "main.js",
       "index.html",
       "package.json",
+      "lib/**/*.js",
       "assets/icon.ico"
     ],
     "win": {

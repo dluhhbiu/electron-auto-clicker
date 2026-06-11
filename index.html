@@ -203,7 +203,9 @@
       <button id="startMovingBtn" data-i18n="startMovingMouse" disabled>Start moving mouse</button>
     </div>
     <div id="status" data-i18n="pressToStart">Press to start</div>
-    <div class="escape-hint" id="escapeHint" style="display: none" data-i18n="pressEscToStop">Press ESC to stop</div>
+    <div class="escape-hint" id="escapeHint" style="display: none" data-i18n="pressEscToStop">
+      Press ESC to stop
+    </div>
 
     <div class="coordinate-section">
       <h2 data-i18n="cursorMovement">Cursor Movement by Coordinates</h2>
@@ -217,7 +219,9 @@
           value="5000"
           style="width: 100px"
         />
-        <button id="selectCoordBtn" class="select-coord-btn" data-i18n="addPoint">Add point by clicking</button>
+        <button id="selectCoordBtn" class="select-coord-btn" data-i18n="addPoint">
+          Add point by clicking
+        </button>
       </div>
       <div class="coordinates-list" id="coordinatesList">
         <div class="empty-list" data-i18n="noCoordinates">No coordinates</div>
@@ -226,6 +230,7 @@
 
     <script>
       const { ipcRenderer } = require("electron");
+      const CoordLib = require("./lib/coordinates.js");
       const startBtn = document.getElementById("startBtn");
       const startInfiniteBtn = document.getElementById("startInfiniteBtn");
       const startHybridBtn = document.getElementById("startHybridBtn");
@@ -387,7 +392,11 @@
       langSelect.value = currentLang;
 
       function t(key) {
-        return (translations[currentLang] && translations[currentLang][key]) || translations.en[key] || key;
+        return (
+          (translations[currentLang] && translations[currentLang][key]) ||
+          translations.en[key] ||
+          key
+        );
       }
 
       function applyTranslations() {
@@ -424,8 +433,8 @@
               <div style="font-family: monospace; font-size: 14px; margin-bottom: 5px">(${coord.x}, ${coord.y}) - ${t("interval")} ${coord.interval}ms</div>
               <div style="display: flex; align-items: center; gap: 5px">
                 <label style="font-size: 12px">${t("interval")}</label>
-                <input type="number" value="${coord.interval}" min="10" style="padding: 3px; width: 70px; font-size: 12px"
-                  onchange="updateCoordInterval(${index}, this.value)" />
+                <input type="number" value="${coord.interval}" min="10" data-index="${index}"
+                  class="interval-edit" style="padding: 3px; width: 70px; font-size: 12px" />
               </div>
             </div>
             <div style="display: flex; gap: 5px">
@@ -439,7 +448,7 @@
         document.querySelectorAll(".remove-btn").forEach((btn) => {
           btn.addEventListener("click", (e) => {
             const index = parseInt(e.target.dataset.index);
-            coordinates.splice(index, 1);
+            coordinates = CoordLib.removeCoordinate(coordinates, index);
             renderCoordinates();
           });
         });
@@ -452,18 +461,22 @@
             ipcRenderer.send("capture-mouse-click");
           });
         });
+        document.querySelectorAll(".interval-edit").forEach((input) => {
+          input.addEventListener("change", (e) => {
+            updateCoordInterval(parseInt(e.target.dataset.index), e.target.value);
+          });
+        });
       }
 
-      window.updateCoordInterval = function (index, value) {
-        const interval = parseInt(value);
-        if (isNaN(interval) || interval < 10) {
+      function updateCoordInterval(index, value) {
+        if (!CoordLib.isValidInterval(value)) {
           alert(t("intervalMin10"));
           renderCoordinates();
           return;
         }
-        coordinates[index].interval = interval;
+        coordinates = CoordLib.updateInterval(coordinates, index, value);
         renderCoordinates();
-      };
+      }
 
       selectCoordBtn.addEventListener("click", () => {
         console.log("Select coord button clicked");
@@ -475,11 +488,14 @@
       ipcRenderer.on("mouse-click-captured", (_event, { x, y }) => {
         console.log("Mouse coord captured:", x, y);
         if (editingIndex >= 0) {
-          coordinates[editingIndex] = { x, y, interval: coordinates[editingIndex].interval };
+          coordinates = CoordLib.replaceCoordinate(coordinates, editingIndex, { x, y });
           editingIndex = -1;
         } else {
-          const interval = parseInt(coordInterval.value) || 5000;
-          coordinates.push({ x, y, interval });
+          coordinates = CoordLib.addCoordinate(coordinates, {
+            x,
+            y,
+            interval: coordInterval.value,
+          });
         }
         renderCoordinates();
         selectCoordBtn.disabled = false;
@@ -516,7 +532,7 @@
       }
 
       function getCoords() {
-        return coordinates.length > 0 ? coordinates : null;
+        return CoordLib.getCoords(coordinates);
       }
 
       startBtn.addEventListener("click", () => {
@@ -592,18 +608,6 @@
 
       ipcRenderer.on("ps-error", (event, data) => {
         console.error("[PowerShell Error]:", data);
-      });
-
-      ipcRenderer.on("move-complete", () => {
-        console.log("Mouse move complete");
-      });
-
-      ipcRenderer.on("move-stopped", () => {
-        console.log("Mouse move stopped");
-      });
-
-      ipcRenderer.on("move-error", (event, error) => {
-        console.log("Mouse move error:", error);
       });
 
       // Apply translations on load

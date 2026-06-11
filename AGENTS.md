@@ -7,7 +7,7 @@ Electron-based auto-clicker using PowerShell SendInput API. Two processes:
 - **Main Process** (`main.js`): Spawns PowerShell scripts, manages IPC
 - **Renderer Process** (`index.html`): UI, displays logs, sends commands
 
-**Features**: Mouse-only mode (~30ms/click), hybrid mode (click + 113 keys in 4 SendInput batches with pre-allocated INPUT arrays, ~7900 actions/10sec), and mouse move with click (moves cursor through coordinates and clicks at each point, button disabled until coordinates are added). Menu bar removed. All keys and processes are released on app close.
+**Features**: Mouse-only mode (~30ms/click), hybrid mode (click + 111 keys in 4 SendInput batches with pre-allocated INPUT arrays, ~8700 actions/10sec), and mouse move with click (moves cursor through coordinates and clicks at each point, button disabled until coordinates are added). Menu bar removed. All keys and processes are released on app close.
 
 ## Validation Rules (CRITICAL)
 
@@ -182,8 +182,9 @@ public static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
 // Uses SendInput API with pre-allocated INPUT[] arrays (4 small batches):
 // batch1Press (mouse+keys), batch1Release, batch2Press (shift+alpha), batch2Release
 // Each batch sent via single SendInput call, Sleep(15)/Sleep(10) between batches
-// Total: ~7900 actions per 10 seconds (114 actions/cycle: 1 click + 86 keys + shift + 26 alpha)
+// Total: ~8700 actions per 10 seconds (112 actions/cycle: 1 click + 85 keys + shift + 25 alpha)
 // NEVER add F1-F12 (0x70-0x7B) — they break the game
+// NEVER add R (0x52) — it rotates the cat in Bongo Cat (issue #2)
 ```
 
 ---

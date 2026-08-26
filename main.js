@@ -1,5 +1,28 @@
-const { app, BrowserWindow, ipcMain, globalShortcut, Menu } = require("electron");
-const { spawn } = require("child_process");
+const { spawn, spawnSync } = require("child_process");
+let electronModule;
+try {
+  electronModule = require("electron");
+} catch (err) {
+  if (err && err.code === "MODULE_NOT_FOUND") {
+    console.error("Electron module is missing. Run `npm install` and then `npm start`.");
+    process.exit(1);
+  }
+  throw err;
+}
+
+if (typeof electronModule === "string") {
+  const result = spawnSync(electronModule, [__filename, ...process.argv.slice(2)], {
+    stdio: "inherit",
+    windowsHide: false,
+  });
+  if (result.error) {
+    console.error(`Failed to launch Electron: ${result.error.message}`);
+    process.exit(1);
+  }
+  process.exit(result.status ?? 0);
+}
+
+const { app, BrowserWindow, ipcMain, globalShortcut, Menu, screen } = electronModule;
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
@@ -10,6 +33,7 @@ let mainWindow;
 let clickerProcess = null;
 let moveProcess = null;
 let captureProcess = null;
+const WINDOW_MOVE_DEBOUNCE_MS = 120;
 
 // Safe send to the renderer: the window may already be destroyed when a
 // PowerShell process exits during shutdown, so guard every send.
@@ -27,14 +51,88 @@ function toCSharpBytes(bytes) {
 function createWindow() {
   Menu.setApplicationMenu(null);
 
+  const initialDisplay = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+  const initialWorkArea = initialDisplay.workArea;
+
   mainWindow = new BrowserWindow({
     icon: path.join(__dirname, "assets", "icon.ico"),
+    x: initialWorkArea.x,
+    y: initialWorkArea.y,
+    width: initialWorkArea.width,
+    height: initialWorkArea.height,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
     },
   });
   mainWindow.maximize();
+
+  let currentDisplayId = initialDisplay.id;
+  let moveTimer = null;
+
+  function fitWindowToDisplay(display) {
+    const wasMaximized = mainWindow.isMaximized();
+    if (wasMaximized) {
+      mainWindow.unmaximize();
+    }
+    mainWindow.setBounds(display.workArea);
+    if (wasMaximized) {
+      mainWindow.maximize();
+    }
+  }
+
+  function syncWindowToCurrentDisplay() {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    const bounds = mainWindow.getBounds();
+    const center = {
+      x: Math.round(bounds.x + bounds.width / 2),
+      y: Math.round(bounds.y + bounds.height / 2),
+    };
+    const display = screen.getDisplayNearestPoint(center);
+    if (display.id === currentDisplayId) return;
+    currentDisplayId = display.id;
+    fitWindowToDisplay(display);
+  }
+
+  const handleDisplayMetricsChanged = (_event, display) => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    if (display.id !== currentDisplayId) return;
+    fitWindowToDisplay(display);
+  };
+
+  const handleDisplayRemoved = () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    const bounds = mainWindow.getBounds();
+    const center = {
+      x: Math.round(bounds.x + bounds.width / 2),
+      y: Math.round(bounds.y + bounds.height / 2),
+    };
+    const display = screen.getDisplayNearestPoint(center);
+    currentDisplayId = display.id;
+    fitWindowToDisplay(display);
+  };
+
+  mainWindow.on("move", () => {
+    if (moveTimer) {
+      clearTimeout(moveTimer);
+    }
+    moveTimer = setTimeout(() => {
+      moveTimer = null;
+      syncWindowToCurrentDisplay();
+    }, WINDOW_MOVE_DEBOUNCE_MS);
+  });
+
+  screen.on("display-metrics-changed", handleDisplayMetricsChanged);
+  screen.on("display-removed", handleDisplayRemoved);
+
+  mainWindow.on("closed", () => {
+    if (moveTimer) {
+      clearTimeout(moveTimer);
+      moveTimer = null;
+    }
+    screen.off("display-metrics-changed", handleDisplayMetricsChanged);
+    screen.off("display-removed", handleDisplayRemoved);
+  });
 
   mainWindow.loadFile("index.html");
 }
@@ -730,19 +828,34 @@ while ($true) {
     windowsHide: true,
   });
   captureProcess = ps;
+  let replied = false;
+  let cleanedUp = false;
+  const cleanup = () => {
+    if (cleanedUp) return;
+    cleanedUp = true;
+    if (captureProcess === ps) captureProcess = null;
+    try {
+      fs.unlinkSync(scriptPath);
+    } catch {
+      // temp file already gone — nothing to clean up
+    }
+  };
 
   ps.stdout.on("data", (data) => {
     output += data.toString();
     sendToRenderer("ps-output", data.toString());
-    const coordMatch = output.match(/COORDS:(\d+),(\d+)/);
+    const coordMatch = output.match(/COORDS:([+-]?\d+),([+-]?\d+)/);
     if (coordMatch) {
+      replied = true;
       event.reply("mouse-click-captured", {
-        x: parseInt(coordMatch[1]),
-        y: parseInt(coordMatch[2]),
+        x: parseInt(coordMatch[1], 10),
+        y: parseInt(coordMatch[2], 10),
       });
       ps.kill();
+      return;
     }
     if (output.includes("CANCELLED")) {
+      replied = true;
       event.reply("mouse-click-error", "Cancelled");
       ps.kill();
     }
@@ -752,23 +865,17 @@ while ($true) {
     sendToRenderer("ps-error", data.toString());
   });
 
-  ps.on("close", () => {
-    if (captureProcess === ps) captureProcess = null;
-    try {
-      fs.unlinkSync(scriptPath);
-    } catch {
-      // temp file already gone — nothing to clean up
+  ps.on("close", (code) => {
+    cleanup();
+    if (!replied) {
+      event.reply("mouse-click-error", `Capture ended unexpectedly (code: ${code ?? "unknown"})`);
     }
   });
 
   ps.on("error", (err) => {
-    // a failed spawn emits "error" before "close" — clean up here too (idempotent)
-    if (captureProcess === ps) captureProcess = null;
-    try {
-      fs.unlinkSync(scriptPath);
-    } catch {
-      // temp file already gone — nothing to clean up
-    }
+    cleanup();
+    if (replied) return;
+    replied = true;
     event.reply("mouse-click-error", err.message);
   });
 });

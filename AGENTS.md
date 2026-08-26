@@ -7,7 +7,7 @@ Electron-based auto-clicker using PowerShell SendInput API. Two processes:
 - **Main Process** (`main.js`): Spawns PowerShell scripts, manages IPC
 - **Renderer Process** (`index.html`): UI, displays logs, sends commands
 
-**Features**: Mouse-only mode (~30ms/click), hybrid mode (click + 111 keys in 4 SendInput batches with pre-allocated INPUT arrays, ~8700 actions/10sec), and mouse move with click (moves cursor through coordinates and clicks at each point, button disabled until coordinates are added). Menu bar removed. All keys and processes are released on app close.
+**Features**: Mouse-only mode (~30ms/click), hybrid mode (click + 109 keys in 4 SendInput batches with pre-allocated INPUT arrays, ~8700 actions/10sec), and mouse move with click (moves cursor through coordinates and clicks at each point, button disabled until coordinates are added). Menu bar removed. All keys and processes are released on app close.
 
 ## Validation Rules (CRITICAL)
 
@@ -41,7 +41,9 @@ npm test                    # Run unit tests (node --test)
 **Testing**: Pure coordinate logic (renderer UI helpers + main-process IPC
 validation via `sanitizeCoordinates`) lives in `lib/coordinates.js` and is
 covered by `test/coordinates.test.js` via the built-in `node --test` runner (no
-extra deps; CI runs it too). Electron-specific main/renderer flows are still
+extra deps; CI runs it too). The hybrid clicker key set lives in
+`lib/hybrid-keys.js`; `test/hybrid-keys.test.js` asserts no key from
+`FORBIDDEN_KEYS` can creep back into it. Electron-specific main/renderer flows are still
 untested — consider electron-mock / Playwright if expanding coverage.
 
 ---
@@ -182,9 +184,12 @@ public static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
 // Uses SendInput API with pre-allocated INPUT[] arrays (4 small batches):
 // batch1Press (mouse+keys), batch1Release, batch2Press (shift+alpha), batch2Release
 // Each batch sent via single SendInput call, Sleep(15)/Sleep(10) between batches
-// Total: ~8700 actions per 10 seconds (112 actions/cycle: 1 click + 85 keys + shift + 25 alpha)
+// Total: ~8700 actions per 10 seconds (110 actions/cycle: 1 click + 84 keys + shift + 24 alpha)
+// Key set lives in lib/hybrid-keys.js; every key banned from it is listed in
+// FORBIDDEN_KEYS there and asserted by test/hybrid-keys.test.js:
 // NEVER add F1-F12 (0x70-0x7B) — they break the game
 // NEVER add R (0x52) — it rotates the cat in Bongo Cat (issue #2)
+// NEVER add F (0x46) — it flips the cat horizontally in Bongo Cat (issue #7)
 ```
 
 ---

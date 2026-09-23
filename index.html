@@ -360,9 +360,8 @@
     </div>
 
     <script>
-      const { ipcRenderer } = require("electron");
-      const CoordLib = require("./lib/coordinates.js");
-      const KeysLib = require("./lib/hybrid-keys.js");
+      const CoordLib = window.electronAPI.coordLib;
+      const KeysLib = window.electronAPI.keysLib;
       const startBtn = document.getElementById("startBtn");
       const startInfiniteBtn = document.getElementById("startInfiniteBtn");
       const startHybridBtn = document.getElementById("startHybridBtn");
@@ -693,7 +692,7 @@
             editingIndex = index;
             selectCoordBtn.disabled = true;
             selectCoordBtn.textContent = t("clickNewPosition");
-            ipcRenderer.send("capture-mouse-click");
+            window.electronAPI.captureMouseClick();
           });
         });
         document.querySelectorAll(".interval-edit").forEach((input) => {
@@ -717,10 +716,10 @@
         console.log("Select coord button clicked");
         selectCoordBtn.disabled = true;
         selectCoordBtn.textContent = t("clickAnywhere");
-        ipcRenderer.send("capture-mouse-click");
+        window.electronAPI.captureMouseClick();
       });
 
-      ipcRenderer.on("mouse-click-captured", (_event, { x, y }) => {
+      window.electronAPI.onMouseClickCaptured(({ x, y }) => {
         console.log("Mouse coord captured:", x, y);
         if (editingIndex >= 0) {
           coordinates = CoordLib.replaceCoordinate(coordinates, editingIndex, { x, y });
@@ -737,7 +736,7 @@
         selectCoordBtn.textContent = t("addPoint");
       });
 
-      ipcRenderer.on("mouse-click-error", (_event, error) => {
+      window.electronAPI.onMouseClickError((error) => {
         console.log("Mouse click error:", error);
         editingIndex = -1;
         selectCoordBtn.disabled = false;
@@ -898,21 +897,21 @@
         disableAllButtons();
         status.textContent = t("clicking10sec");
         escapeHint.style.display = "none";
-        ipcRenderer.send("start-clicker", { coordinates: getCoords() });
+        window.electronAPI.startClicker({ coordinates: getCoords() });
       });
 
       startInfiniteBtn.addEventListener("click", () => {
         disableAllButtons();
         status.textContent = t("clickingEsc");
         escapeHint.style.display = "block";
-        ipcRenderer.send("start-clicker-infinite", { coordinates: getCoords() });
+        window.electronAPI.startClickerInfinite({ coordinates: getCoords() });
       });
 
       startHybridBtn.addEventListener("click", () => {
         disableAllButtons();
         status.textContent = t("clicksKeys10sec");
         escapeHint.style.display = "none";
-        ipcRenderer.send("start-hybrid-clicker", {
+        window.electronAPI.startHybridClicker({
           coordinates: getCoords(),
           excludedKeys: getExcludedKeys(),
         });
@@ -922,7 +921,7 @@
         disableAllButtons();
         status.textContent = t("clicksKeysEsc");
         escapeHint.style.display = "block";
-        ipcRenderer.send("start-hybrid-clicker-infinite", {
+        window.electronAPI.startHybridClickerInfinite({
           coordinates: getCoords(),
           excludedKeys: getExcludedKeys(),
         });
@@ -932,46 +931,46 @@
         disableAllButtons();
         status.textContent = t("movingMouseEsc");
         escapeHint.style.display = "block";
-        ipcRenderer.send("start-moving-mouse", { coordinates: getCoords() });
+        window.electronAPI.startMovingMouse({ coordinates: getCoords() });
       });
 
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
           console.log("ESC pressed, stopping clicker");
-          ipcRenderer.send("stop-clicker");
+          window.electronAPI.stopClicker();
         }
       });
 
-      ipcRenderer.on("clicker-complete", () => {
+      window.electronAPI.onClickerComplete(() => {
         enableAllButtons();
         status.textContent = t("done");
         escapeHint.style.display = "none";
         console.log("Clicker complete");
       });
 
-      ipcRenderer.on("clicker-stopped", () => {
+      window.electronAPI.onClickerStopped(() => {
         enableAllButtons();
         status.textContent = t("stopped");
         escapeHint.style.display = "none";
         console.log("Clicker stopped");
       });
 
-      ipcRenderer.on("clicker-error", (event, error) => {
+      window.electronAPI.onClickerError((error) => {
         enableAllButtons();
         status.textContent = t("error") + error;
         escapeHint.style.display = "none";
         console.log("Clicker error:", error);
       });
 
-      ipcRenderer.on("log", (event, message) => {
+      window.electronAPI.onLog((message) => {
         console.log("[Main Process]:", message);
       });
 
-      ipcRenderer.on("ps-output", (event, data) => {
+      window.electronAPI.onPsOutput((data) => {
         console.log("[PowerShell]:", data);
       });
 
-      ipcRenderer.on("ps-error", (event, data) => {
+      window.electronAPI.onPsError((data) => {
         console.error("[PowerShell Error]:", data);
       });
 

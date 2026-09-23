@@ -199,13 +199,17 @@ public static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
 
 ## Configuration & Security
 
-**BrowserWindow**: `nodeIntegration: true, contextIsolation: false` for inline scripts
+**BrowserWindow**: `nodeIntegration: false, contextIsolation: true`, with `preload.js`
+exposing a narrow `window.electronAPI` (via `contextBridge`) for IPC and the
+`lib/coordinates.js` / `lib/hybrid-keys.js` helpers. The renderer must never call
+`require()` or touch `ipcRenderer` directly.
 
 **Security warnings**:
 
-- These settings are for local utility apps only
 - Never shell-escape user input
 - Validate all IPC data
+- Keep `window.electronAPI` narrowly scoped: expose only the specific operations the
+  UI needs, never raw `ipcRenderer` or `require`
 
 **Git**: Never commit `dist/`, `node_modules/`, `*.exe`, `*.log`, `*.asar`
 

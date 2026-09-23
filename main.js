@@ -30,8 +30,10 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     icon: path.join(__dirname, "assets", "icon.ico"),
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: false,
+      preload: path.join(__dirname, "preload.js"),
     },
   });
   mainWindow.maximize();
